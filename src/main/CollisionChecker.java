@@ -1,6 +1,9 @@
 package main;
 
 import entity.Entity;
+import object.SuperObject;
+
+import java.awt.*;
 
 public class CollisionChecker {
 
@@ -34,7 +37,7 @@ public class CollisionChecker {
                 }
                 break;
             case "down":
-                entityBottomRow = (entityTopWorldY + entity.speed)/gp.tileSize;
+                entityBottomRow = (entityBottomWorldY + entity.speed)/gp.tileSize;
                 tileNum1 = gp.tileM.mapTileNum[entityLeftCol][entityBottomRow];
                 tileNum2 = gp.tileM.mapTileNum[entityRightCol][entityBottomRow];
                 if (gp.tileM.tile[tileNum1].collision || gp.tileM.tile[tileNum2].collision) {
@@ -58,5 +61,72 @@ public class CollisionChecker {
                 }
                 break;
         }
+    }
+
+    public int checkObject(Entity entity, boolean player) {
+
+        int index = 999;
+
+        for(int i = 0; i < gp.obj.length; i++) {
+            if(gp.obj[i] != null) {
+                SuperObject obj = gp.obj[i];
+
+                Rectangle entityArea = new Rectangle(entity.worldX + entity.solidArea.x,  entity.worldY + entity.solidArea.y,
+                        entity.solidArea.width, entity.solidArea.height);
+
+                Rectangle objectArea = new Rectangle(obj.worldX + obj.solidArea.x,  obj.worldY + obj.solidArea.y,
+                        obj.solidArea.width, obj.solidArea.height);
+
+                //get entity's solid area position
+                //entity.solidArea.x = entity.worldX + entity.solidArea.x;
+                //entity.solidArea.y = entity.worldY + entity.solidArea.y;
+
+                //get object's solid area position
+                //gp.obj[i].solidArea.x = gp.obj[i].worldX + gp.obj[i].solidArea.x;
+                //gp.obj[i].solidArea.y = gp.obj[i].worldY + gp.obj[i].solidArea.y;
+
+                switch(entity.direction) {
+                    case "up":
+                        entityArea.y -= entity.speed;
+                        if (entityArea.intersects(objectArea)) {
+                            if(gp.obj[i].collision) {
+                                entity.collisionOn = true;
+                            }
+                        }
+                        break;
+                    case "down":
+                        entityArea.y += entity.speed;
+                        if (entityArea.intersects(objectArea)) {
+                            if(gp.obj[i].collision) {
+                                entity.collisionOn = true;
+                            }
+                        }
+                        break;
+                    case "left":
+                        entityArea.x -= entity.speed;
+                        if (entityArea.intersects(objectArea)) {
+                            if(gp.obj[i].collision) {
+                                entity.collisionOn = true;
+                            }
+                        }
+                        break;
+                    case "right":
+                        entityArea.x += entity.speed;
+                        if (entityArea.intersects(objectArea)) {
+                            if(gp.obj[i].collision) {
+                                entity.collisionOn = true;
+                            }
+                        }
+                        break;
+
+                }
+                //entity.solidArea.x = entity.solidAreaDefaultX;
+                //entity.solidArea.y = entity.solidAreaDefaultY;
+                //gp.obj[i].solidArea.x = gp.obj[i].solidAreaDefaultX;
+                //gp.obj[i].solidArea.y = gp.obj[i].solidAreaDefaultY;
+            }
+        }
+
+        return index;
     }
 }

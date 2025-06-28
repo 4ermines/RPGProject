@@ -1,9 +1,12 @@
 package object;
 
 import main.GamePanel;
+import org.w3c.dom.css.Rect;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public class SuperObject {
 
@@ -11,14 +14,53 @@ public class SuperObject {
     public String name;
     public boolean collision = false;
     public int worldX, worldY;
+    public Rectangle solidArea = new Rectangle();
+    public int solidAreaDefaultX = 0;
+    public int solidAreaDefaultY = 0;
+    public boolean dialogueShown = false;
+
+    public SuperObject(String name, int worldX, int worldY, boolean collision) {
+        this.name = name;
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.collision = collision;
+
+        loadImage(name);
+        if (image != null) {
+            switch (name) {
+                case "bedbigger":
+                    this.solidArea = new Rectangle(10, 10, image.getWidth()-20, image.getHeight() - 10);
+                    break;
+                default:
+                    this.solidArea = new Rectangle(0, 0, image.getWidth(), image.getHeight());
+
+
+            }
+        }
+
+        this.solidAreaDefaultX = solidArea.x;
+        this.solidAreaDefaultY = solidArea.y;
+
+    }
+
+    private void loadImage(String name) {
+        try {
+            image = ImageIO.read(getClass().getResourceAsStream("/objects/" + name + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void draw(Graphics2D g2, GamePanel gp) {
 
         int screenX = worldX - gp.player.worldX + gp.player.screenX;
         int screenY = worldY - gp.player.worldY + gp.player.screenY;
 
-        if (worldX + gp.tileSize > gp.player.worldX - gp.player.screenX && worldX - gp.tileSize < gp.player.worldX + gp.player.screenX
-                && worldY + gp.tileSize > gp.player.worldY - gp.player.screenY && worldY - gp.tileSize < gp.player.worldY + gp.player.screenY) {
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+
+        if (worldX + imageWidth > gp.player.worldX - gp.player.screenX && worldX < gp.player.worldX + gp.player.screenX + gp.tileSize
+                && worldY + imageHeight > gp.player.worldY - gp.player.screenY && worldY < gp.player.worldY + gp.player.screenY + gp.tileSize) {
             g2.drawImage(image, screenX, screenY, null);
         }
     }

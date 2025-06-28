@@ -21,10 +21,27 @@ public class GamePanel extends JPanel implements Runnable {
     public final int screenHeight = tileSize * maxScreenRow;
 
     // WORLD SETTINGS
-    public final int maxWorldCol = 37;
-    public final int maxWorldRow = 12;
-    public final int worldWidth = tileSize * maxWorldCol;
-    public final int worldHeight = tileSize * maxWorldRow;
+    public int maxWorldCol;
+    public int maxWorldRow;
+    public int worldWidth = tileSize * maxWorldCol;
+    public int worldHeight = tileSize * maxWorldRow;
+
+    public int gameState;
+    public final int tileState = 0;
+    public final int playState = 1;
+    public final int dialogueState = 2;
+    public final int transitionState = 3;
+    public final int introState = 4;
+    public final int fadeState = 5;
+    int fadeAlpha = 255;
+
+    public TextHandler textHandler = new TextHandler(this);
+    public int dialogueIndex = 0;
+
+    public String objectDialogue = " ";
+    public boolean nearObject = false;
+    public String[] dialogueLines;
+
 
 
     //FPS
@@ -36,7 +53,7 @@ public class GamePanel extends JPanel implements Runnable {
     public CollisionChecker cChecker = new CollisionChecker(this);
     public AssetSetter aSetter = new AssetSetter(this);
     public Player player = new Player(this, keyH);
-    public SuperObject obj[] = new SuperObject[10];
+    public SuperObject obj[] = new SuperObject[20];
 
 
     public GamePanel() {
@@ -45,6 +62,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.addKeyListener(keyH);
         this.setFocusable(true);
+        gameState = introState;
     }
 
     public void setupGame() { //object
@@ -93,14 +111,68 @@ public class GamePanel extends JPanel implements Runnable {
 
     }
 
-    public void update() {
-        player.update();
+    public void drawIntroText(Graphics2D g2) {
+        g2.setColor(Color.white);
+        g2.setFont(new Font("Arial", Font.PLAIN, 32));
+        String text = "You wake up. The sun shines brightly in your face.";
+        int x = 150;
+        int y = screenHeight/2;
+        g2.drawString(text, x, y);
 
     }
+
+    int introCounter = 0;
+    int fadeCounter = 0;
+    public String currentDialogue = "";
+
+    public void update() {
+        //fade in intro
+        if (gameState == introState) {
+            introCounter++;
+            if (introCounter > 180) {
+                gameState = fadeState;
+                fadeAlpha = 255;
+            }
+        } else if (gameState == fadeState) {
+            fadeCounter++;
+            fadeAlpha -= 2;
+            if (fadeAlpha <= 0) {
+                fadeAlpha = 0;
+                gameState = dialogueState;
+                dialogueIndex = 0;
+                dialogueLines = new String[] {
+                        "Something tells you it's going to be a good day.",
+                        "Use WASD to move."
+
+                };
+
+            }
+
+        }
+        else if (gameState == dialogueState && keyH.spacePressed) {
+            keyH.spacePressed = false;
+            dialogueIndex++;
+            if (dialogueIndex >= dialogueLines.length) {
+                gameState = playState;
+                dialogueIndex = 0;
+                currentDialogue = "";
+            }
+        }
+        else if (gameState == playState) {
+            player.update();
+            player.checkObjectProximity();
+            player.checkObjectInteraction();
+        }
+
+
+
+    }
+
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D)g;
+
 
         //TILE
         tileM.draw(g2);
@@ -112,8 +184,39 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
+
+
         //PLAYER
         player.draw(g2);
+
+        if (gameState == introState) {
+            g2.setColor(black);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+            drawIntroText(g2);
+
+        }
+
+
+        //intro and fade
+         if (gameState == fadeState) {
+            g2.setColor(new Color(0, 0, 0, fadeAlpha));
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+
+
+        }
+        //dialogue
+         if (gameState == dialogueState) {
+             if (dialogueIndex < dialogueLines.length) {
+                 currentDialogue = dialogueLines[dialogueIndex];
+                 textHandler.drawDialogueBox(g2);
+             } else {
+                 gameState = playState;
+                 currentDialogue = "";
+             }
+
+
+         }
+
 
         g2.dispose();
 

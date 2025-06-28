@@ -1,7 +1,9 @@
 package entity;
 
+import main.AssetSetter;
 import main.GamePanel;
 import main.KeyHandler;
+import object.SuperObject;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -23,14 +25,16 @@ public class Player extends Entity {
         screenX = gp.screenWidth/2 - (gp.tileSize/2);
         screenY = gp.screenHeight/2 - (gp.tileSize/2);
 
-        solidArea = new Rectangle(16, 32, 48, 48);
+        solidArea = new Rectangle(16, 32, 32, 32);
+        solidAreaDefaultX = solidArea.x;
+        solidAreaDefaultY = solidArea.y;
 
         setDefaultValues();
         getPlayerImage();
     }
     public void setDefaultValues () {
-        worldX = gp.tileSize * 10;
-        worldY = gp.tileSize * 8;
+        worldX = gp.tileSize * 4;
+        worldY = gp.tileSize * 4;
         speed = 4;
         direction = "down";
     }
@@ -78,6 +82,9 @@ public class Player extends Entity {
             collisionOn = false;
             gp.cChecker.checkTile(this);
 
+            // check object collision
+            int objIndex = gp.cChecker.checkObject(this, true);
+
             // if collision is false, player can move
             if (!collisionOn) {
 
@@ -117,6 +124,65 @@ public class Player extends Entity {
 
 
     }
+    public void checkObjectProximity() {
+        for (int i = 0; i < gp.obj.length; i++) {
+            if (gp.obj[i] != null && !gp.obj[i].dialogueShown) {
+                int xDistance = Math.abs(worldX - gp.obj[i].worldX);
+                int yDistance = Math.abs(worldY - gp.obj[i].worldY);
+                int distance = Math.max(xDistance, yDistance);
+
+                if (distance < 2 * gp.tileSize) {
+                    if (gp.obj[i].name.equals("door1") && i == 1) {
+                        gp.gameState = gp.dialogueState;
+                        gp.dialogueLines = new String[]{
+                                "Press 'F' to interact"
+                        };
+                        gp.nearObject = true;
+                        gp.obj[i].dialogueShown = true;
+                        break;
+                    }
+                } else if (distance < 4 * gp.tileSize) {
+                    if (gp.obj[i].name.equals("envelope")) {
+                        gp.gameState = gp.dialogueState;
+                        gp.dialogueLines = new String[]{
+                                "You see a envelope near the front door.",
+                                "You weren't expecting mail. Best to check it out."
+                        };
+                        gp.nearObject = true;
+                        gp.obj[i].dialogueShown = true;
+                        break;
+
+                    }
+                }
+            }
+        }
+    }
+    // else {
+    //                    gp.nearObject = false;
+
+    public void checkObjectInteraction() {
+        for (int i = 0; i < gp.obj.length; i++) {
+            if (gp.obj[i] != null) {
+                int xDistance = Math.abs(worldX - gp.obj[i].worldX);
+                int yDistance = Math.abs(worldY - gp.obj[i].worldY);
+                int distance = Math.max(xDistance, yDistance);
+                if (gp.obj[i].name.equals("door1") && i == 1) {
+                    if (distance < 2 * gp.tileSize) {
+                        if (keyH.interactPressed) {
+                            gp.obj[1] = new SuperObject("dooropen", 12*gp.tileSize, 4 * gp.tileSize, false);
+                            keyH.interactPressed = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+        keyH.interactPressed = false;
+
+    }
+
+
     public void draw(Graphics2D g2) {
 
          //    g2.setColor(Color.white);
