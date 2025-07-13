@@ -74,7 +74,7 @@ public class CollisionChecker {
                 Rectangle entityArea = new Rectangle(entity.worldX + entity.solidArea.x,  entity.worldY + entity.solidArea.y,
                         entity.solidArea.width, entity.solidArea.height);
 
-                Rectangle objectArea = new Rectangle(obj.worldX + obj.solidArea.x,  obj.worldY + obj.solidArea.y,
+                Rectangle objectArea = new Rectangle((int) (obj.worldX + obj.solidArea.x), (int) (obj.worldY + obj.solidArea.y),
                         obj.solidArea.width, obj.solidArea.height);
 
                 //get entity's solid area position

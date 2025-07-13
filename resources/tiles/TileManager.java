@@ -1,5 +1,6 @@
 package tiles;
 
+import main.AssetSetter;
 import main.GamePanel;
 
 import javax.imageio.ImageIO;
@@ -8,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class TileManager {
 
@@ -19,11 +21,12 @@ public class TileManager {
 
         this.gp = gp;
 
-        tile = new Tile[10]; //10 kinds of tiles
+        tile = new Tile[100]; //100 kinds of tiles
         mapTileNum = new int[gp.maxWorldCol][gp.maxWorldRow];
 
         getTileImage();
-        loadMap("/maps/roommap1.txt");
+        loadMap(gp.mapFiles[0]);
+        gp.mapIndex = 0;
     }
 
     public void getTileImage() {
@@ -50,6 +53,49 @@ public class TileManager {
             tile[6] = new Tile();
             tile[6].image = ImageIO.read(getClass().getResourceAsStream("/tiles/walltileinterior.png"));
             tile[6].collision = true;
+            tile[7] = new Tile();
+            tile[7].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainfloortile.png"));
+            tile[7].collision = false;
+            tile[8] = new Tile();
+            tile[8].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainstairtoptile.png"));
+            tile[8].collision = false;
+            tile[9] = new Tile();
+            tile[9].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainstairbottomtile.png"));
+            tile[9].collision = false;
+            tile[10] = new Tile();
+            tile[10].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainwalltile.png"));
+            tile[10].collision = true;
+
+            tile[11] = new Tile();
+            tile[11].image = ImageIO.read(getClass().getResourceAsStream("/tiles/traindoortileleft.png"));
+            tile[11].collision = true;
+            tile[12] = new Tile();
+            tile[12].image = ImageIO.read(getClass().getResourceAsStream("/tiles/traindoortileright.png"));
+            tile[12].collision = true;
+
+            tile[13] = new Tile();
+            tile[13].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darktiletest.png"));
+            tile[13].collision = false;
+            tile[14] = new Tile();
+            tile[14].image = ImageIO.read(getClass().getResourceAsStream("/tiles/topdarkstair.png"));
+            tile[14].collision = false;
+            tile[15] = new Tile();
+            tile[15].image = ImageIO.read(getClass().getResourceAsStream("/tiles/middledarkstair.png"));
+            tile[15].collision = false;
+            tile[16] = new Tile();
+            tile[16].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkwalltile.png"));
+            tile[16].collision = true;
+            tile[17] = new Tile();
+            tile[17].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkgrassytile.png"));
+            tile[17].collision = false;
+            tile[18] = new Tile();
+            tile[18].image = ImageIO.read(getClass().getResourceAsStream("/tiles/forestgrass.png"));
+            tile[18].collision = false;
+
+
+
+
+
 
 
 
@@ -65,28 +111,6 @@ public class TileManager {
         try {
             InputStream is = getClass().getResourceAsStream(mapPath); //import text file
             BufferedReader br = new BufferedReader(new InputStreamReader(is)); //read the content of the text file
-
-            //int col = 0;
-            //int row = 0;
-
-            //while (col < gp.maxWorldCol && row < gp.maxWorldRow) {
-
-            //    String line = br.readLine(); //read a single line of text
-
-            //    while (col < gp.maxWorldCol) {
-            //        String numbers[] = line.split(" "); //get the numbers one by one and put them into an array
-
-            //        int num = Integer.parseInt(numbers[col]); //changing from string to int
-
-            //        mapTileNum[col][row] = num;
-            //        col++;
-            //    }
-            //    if (col == gp.maxWorldCol) {
-            //        col = 0;
-            //        row++;
-            //    }
-
-            //}
 
             java.util.List<String> lines = new java.util.ArrayList<>();
             String line;
@@ -110,7 +134,7 @@ public class TileManager {
                 }
             }
             } catch (Exception e) {
-
+                e.printStackTrace();
         }
     }
 

@@ -13,13 +13,14 @@ public class SuperObject {
     public BufferedImage image;
     public String name;
     public boolean collision = false;
-    public int worldX, worldY;
+    public double worldX;
+    public double worldY;
     public Rectangle solidArea = new Rectangle();
     public int solidAreaDefaultX = 0;
     public int solidAreaDefaultY = 0;
     public boolean dialogueShown = false;
 
-    public SuperObject(String name, int worldX, int worldY, boolean collision) {
+    public SuperObject(String name, double worldX, double worldY, boolean collision) {
         this.name = name;
         this.worldX = worldX;
         this.worldY = worldY;
@@ -53,15 +54,15 @@ public class SuperObject {
 
     public void draw(Graphics2D g2, GamePanel gp) {
 
-        int screenX = worldX - gp.player.worldX + gp.player.screenX;
-        int screenY = worldY - gp.player.worldY + gp.player.screenY;
+        double screenX = worldX - gp.player.worldX + gp.player.screenX;
+        double screenY = worldY - gp.player.worldY + gp.player.screenY;
 
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
+        double imageWidth = image.getWidth();
+        double imageHeight = image.getHeight();
 
         if (worldX + imageWidth > gp.player.worldX - gp.player.screenX && worldX < gp.player.worldX + gp.player.screenX + gp.tileSize
                 && worldY + imageHeight > gp.player.worldY - gp.player.screenY && worldY < gp.player.worldY + gp.player.screenY + gp.tileSize) {
-            g2.drawImage(image, screenX, screenY, null);
+            g2.drawImage(image, (int) screenX, (int) screenY, null);
         }
     }
 }

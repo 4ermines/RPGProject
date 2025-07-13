@@ -1,6 +1,5 @@
 package entity;
 
-import main.AssetSetter;
 import main.GamePanel;
 import main.KeyHandler;
 import object.SuperObject;
@@ -17,6 +16,25 @@ public class Player extends Entity {
 
     public final int screenX;
     public final int screenY;
+
+    public boolean holdingLetter = false;
+    public boolean packDone = false;
+
+
+    public enum AnimationType {
+        NONE,
+        BOUNCE,
+        SPIN,
+        //add more
+    }
+    public AnimationType currentAnimation = AnimationType.NONE;
+    private int animationCounter = 0;
+    private int animationMax = 30;
+    private int animationOffsetY = 0;
+    private boolean animationDone = false;
+    private boolean triggerLetterReactionDialogue = false;
+    private boolean fadeTriggered = false;
+
 
     public Player (GamePanel gp, KeyHandler keyH) {
         this.gp = gp;
@@ -55,6 +73,8 @@ public class Player extends Entity {
             right1 = ImageIO.read(getClass().getResourceAsStream("/player/right facing step frontleg.png"));
             right2 = ImageIO.read(getClass().getResourceAsStream("/player/right facing neutral.png"));
             right3 = ImageIO.read(getClass().getResourceAsStream("/player/right facing step backleg.png"));
+
+            openletter = ImageIO.read(getClass().getResourceAsStream("/player/openletter.png"));
 
 
 
@@ -120,41 +140,72 @@ public class Player extends Entity {
                 }
                 spriteCounter = 0;
             }
-        }
 
+        }
+        playAnimation();
 
     }
     public void checkObjectProximity() {
         for (int i = 0; i < gp.obj.length; i++) {
-            if (gp.obj[i] != null && !gp.obj[i].dialogueShown) {
-                int xDistance = Math.abs(worldX - gp.obj[i].worldX);
-                int yDistance = Math.abs(worldY - gp.obj[i].worldY);
-                int distance = Math.max(xDistance, yDistance);
+            if (gp.obj[i] != null) {
+                double xDistance = Math.abs(worldX - gp.obj[i].worldX);
+                double yDistance = Math.abs(worldY - gp.obj[i].worldY);
+                double distance = Math.max(xDistance, yDistance);
+                // INTRO
+                if (!gp.obj[i].dialogueShown) {
 
-                if (distance < 2 * gp.tileSize) {
-                    if (gp.obj[i].name.equals("door1") && i == 1) {
-                        gp.gameState = gp.dialogueState;
-                        gp.dialogueLines = new String[]{
-                                "Press 'F' to interact"
-                        };
-                        gp.nearObject = true;
-                        gp.obj[i].dialogueShown = true;
-                        break;
-                    }
-                } else if (distance < 4 * gp.tileSize) {
-                    if (gp.obj[i].name.equals("envelope")) {
-                        gp.gameState = gp.dialogueState;
-                        gp.dialogueLines = new String[]{
-                                "You see a envelope near the front door.",
-                                "You weren't expecting mail. Best to check it out."
-                        };
-                        gp.nearObject = true;
-                        gp.obj[i].dialogueShown = true;
-                        break;
+                    if (distance < 2 * gp.tileSize) {
+                        if (gp.obj[i].name.equals("door1") && i == 1) {
+                            gp.gameState = gp.dialogueState;
+                            gp.dialogueLines = new String[]{
+                                    "Press 'F' to interact"
+                            };
+                            gp.obj[i].dialogueShown = true;
+                            break;
+                        }
+                    } else if (distance < 4 * gp.tileSize) {
+                        if (gp.obj[i].name.equals("envelope")) {
+                            gp.gameState = gp.dialogueState;
+                            gp.dialogueLines = new String[]{
+                                    "You see a envelope near the front door.",
+                                    "You weren't expecting mail. Best to check it out."
+                            };
+                            gp.obj[i].dialogueShown = true;
+                            break;
 
+                        }
                     }
                 }
+                if (packDone) {
+                    gp.gameState = gp.playState;
+                    if (distance < gp.tileSize) {
+                        if (gp.obj[i].name.equals("door1") && i == 3) {
+                            gp.enterTrain();
+                        }
+                    }
+                }
+                if (distance < 1.2*gp.tileSize && gp.obj[i] != null) {
+                    if (gp.obj[i].name.equals("traindoor") && !fadeTriggered) {
+                        fadeTriggered = true;
+                        gp.completeFade(
+                                new String[]{"You board the train."},
+                                () -> {
+                                    gp.enterNewTrain();
+                                },
+                                () -> {
+                                    gp.dialogueIndex = 0;
+                                    gp.gameState = gp.dialogueState;
+                                    gp.dialogueLines = new String[]{
+                                            "The station is eerily empty.",
+                                            "Did you take the right train?"
+                                    };
+                                }
+                        );
+                    }
+                }
+
             }
+
         }
     }
     // else {
@@ -163,23 +214,133 @@ public class Player extends Entity {
     public void checkObjectInteraction() {
         for (int i = 0; i < gp.obj.length; i++) {
             if (gp.obj[i] != null) {
-                int xDistance = Math.abs(worldX - gp.obj[i].worldX);
-                int yDistance = Math.abs(worldY - gp.obj[i].worldY);
-                int distance = Math.max(xDistance, yDistance);
+                double xDistance = Math.abs(worldX - gp.obj[i].worldX);
+                double yDistance = Math.abs(worldY - gp.obj[i].worldY);
+                double distance = Math.max(xDistance, yDistance);
                 if (gp.obj[i].name.equals("door1") && i == 1) {
                     if (distance < 2 * gp.tileSize) {
                         if (keyH.interactPressed) {
-                            gp.obj[1] = new SuperObject("dooropen", 12*gp.tileSize, 4 * gp.tileSize, false);
+                            gp.obj[1] = new SuperObject("dooropen", 12 * gp.tileSize, 4 * gp.tileSize, false);
                             keyH.interactPressed = false;
                             break;
                         }
                     }
                 }
-            }
+                if (gp.obj[i].name.equals("envelope") && i == 7) {
+                    if (distance < 1 * gp.tileSize) {
+                        if (keyH.interactPressed) {
+                            gp.obj[7] = null;
+                            i--;
+                            holdingLetter = true;
+                            gp.gameState = gp.dialogueState;
+                            gp.dialogueLines = new String[] {
+                                    "Congratulations! After careful evaluation, we are excited to offer \nyou a place at Magicode Academy!",
+                                    "By attending our school, you'll be surrounded by a community of scholars \nand have the chance to sharpen your magic skills."
+                            };
+                            gp.dialogueIndex = 0;
+                            currentAnimation = AnimationType.BOUNCE;
+                            animationMax = 30;
+                            gp.startAnimationAfterDialogue = true;
+                            triggerLetterReactionDialogue = true;
 
+                            break;
+                        }
+                    }
+
+                }
+                if (gp.obj[i] != null) {
+
+                    if (gp.gameState == gp.packState) {
+                        if (gp.obj[i].name.equals("backpack1") && i == 5) {
+                            if (distance < 2 * gp.tileSize) {
+                                if (keyH.interactPressed) {
+                                    gp.obj[5] = null;
+                                    gp.gameState = gp.dialogueState;
+                                    gp.dialogueLines = new String[]{
+                                            "Good idea! You'll definitely need a backpack to pack your things.",
+                                    };
+                                    gp.dialogueIndex = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        if (gp.obj[i].name.equals("laptop") && i == 10) {
+                            if (distance < gp.tileSize) {
+                                if (keyH.interactPressed) {
+                                    gp.obj[10] = null;
+                                    gp.gameState = gp.dialogueState;
+                                    gp.dialogueLines = new String[]{
+                                            "Packing a laptop is smart. You'll need it for your studies.",
+                                    };
+                                    gp.dialogueIndex = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        if (gp.obj[i].name.equals("roomitems") && i == 11) {
+                            if (distance < gp.tileSize) {
+                                if (keyH.interactPressed) {
+                                    gp.obj[11] = null;
+                                    gp.gameState = gp.dialogueState;
+                                    gp.dialogueLines = new String[]{
+                                            "You can't imagine leaving without your personal items. A phone \nand a notebook is a must!",
+                                    };
+                                    gp.dialogueIndex = 0;
+                                    break;
+                                }
+                            }
+                        }
+                        if (gp.obj[5] == null && gp.obj[10] == null && gp.obj[11] == null) {
+                            gp.gameState = gp.dialogueState;
+                            gp.dialogueLines = new String[]{
+                                    "Nice! You've got everything you need. Hurry and catch the train!"
+                            };
+
+                            packDone = true;
+                        }
+                    }
+                }
+            }
         }
         keyH.interactPressed = false;
+    }
 
+    public void playAnimation() {
+        if (currentAnimation == AnimationType.NONE) {
+            return;
+        }
+
+        animationCounter++;
+
+        switch (currentAnimation) {
+            case BOUNCE:
+                animationDone = false;
+                double t = (double) animationCounter / animationMax;
+                animationOffsetY = (int)(-4 * t * (1-t) * 10);
+                break;
+            case SPIN:
+                //do something eventually?
+
+        }
+        if (animationCounter >= animationMax) {
+            animationCounter = 0;
+            animationOffsetY = 0;
+            currentAnimation = AnimationType.NONE;
+            gp.gameState = gp.dialogueState;
+            animationDone = true;
+            if (triggerLetterReactionDialogue) {
+                gp.dialogueLines = new String[] {
+                        "You can't believe you made it!",
+                        "You should go pack your things ASAP!"
+                };
+                gp.dialogueIndex = 0;
+                triggerLetterReactionDialogue = false;
+                gp.dialogueFinished = true;
+            }
+            holdingLetter = false;
+
+
+        }
     }
 
 
@@ -189,53 +350,60 @@ public class Player extends Entity {
         //    g2.fillRect(x, y, gp.tileSize, gp.tileSize);
 
         BufferedImage image = null;
+        if (holdingLetter && gp.gameState == gp.dialogueState) {
+            image = openletter;
+        } else if (currentAnimation == AnimationType.BOUNCE) {
+            image = down2;
+        } else {
+            switch (direction) {
+                case "up":
+                    if (spriteNum == 1) {
+                        image = up1;
+                    }
+                    if (spriteNum == 2) {
+                        image = up2;
+                    }
+                    if (spriteNum == 3) {
+                        image = up3;
+                    }
+                    break;
+                case "down":
+                    if (spriteNum == 1) {
+                        image = down1;
+                    }
+                    if (spriteNum == 2) {
+                        image = down2;
+                    }
+                    if (spriteNum == 3) {
+                        image = down3;
+                    }
+                    break;
+                case "left":
+                    if (spriteNum == 1) {
+                        image = left1;
+                    }
+                    if (spriteNum == 2) {
+                        image = left2;
+                    }
+                    if (spriteNum == 3) {
+                        image = left3;
+                    }
+                    break;
+                case "right":
+                    if (spriteNum == 1) {
+                        image = right1;
+                    }
+                    if (spriteNum == 2) {
+                        image = right2;
+                    }
+                    if (spriteNum == 3) {
+                        image = right3;
+                    }
+            }
 
-        switch (direction) {
-            case "up":
-                if (spriteNum == 1) {
-                    image = up1;
-                }
-                if (spriteNum == 2) {
-                    image = up2;
-                }
-                if (spriteNum == 3) {
-                    image = up3;
-                }
-                break;
-            case "down":
-                if (spriteNum == 1) {
-                    image = down1;
-                }
-                if (spriteNum == 2) {
-                    image = down2;
-                }
-                if (spriteNum == 3) {
-                    image = down3;
-                }
-                break;
-            case "left":
-                if (spriteNum == 1) {
-                    image = left1;
-                }
-                if (spriteNum == 2) {
-                    image = left2;
-                }
-                if (spriteNum == 3) {
-                    image = left3;
-                }
-                break;
-            case "right":
-                if (spriteNum == 1) {
-                    image = right1;
-                }
-                if (spriteNum == 2) {
-                    image = right2;
-                }
-                if (spriteNum == 3) {
-                    image = right3;
-                }
+        }
+        g2.drawImage(image, screenX, screenY + animationOffsetY, gp.tileSize, gp.tileSize, null);
 
-        }   g2.drawImage(image, screenX, screenY, gp.tileSize, gp.tileSize, null);
 
     }
 }
