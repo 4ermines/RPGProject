@@ -34,6 +34,10 @@ public class Player extends Entity {
     private boolean animationDone = false;
     private boolean triggerLetterReactionDialogue = false;
     private boolean fadeTriggered = false;
+    private boolean stoutAnimationDone;
+    private int stoutAnimationOffsetY = 0;
+    private int stoutCounter = 0;
+    private int stoutMax = 30;
 
 
     public Player (GamePanel gp, KeyHandler keyH) {
@@ -55,6 +59,8 @@ public class Player extends Entity {
         worldY = gp.tileSize * 4;
         speed = 4;
         direction = "down";
+        maxHp = 100;
+        hp = maxHp;
     }
     public void getPlayerImage() {
         try {
@@ -75,6 +81,8 @@ public class Player extends Entity {
             right3 = ImageIO.read(getClass().getResourceAsStream("/player/right facing step backleg.png"));
 
             openletter = ImageIO.read(getClass().getResourceAsStream("/player/openletter.png"));
+
+            icon = ImageIO.read(getClass().getResourceAsStream("/ui/main1BattleIcon.png"));
 
 
 
@@ -201,6 +209,41 @@ public class Player extends Entity {
                                     };
                                 }
                         );
+                    }
+                }
+
+
+                if (distance < 2 * gp.tileSize && gp.obj[i] != null) {
+                    if (gp.obj[i].name.equals("stoutstill")) {
+
+                        if (stoutAnimationDone) {
+                            stoutAnimationDone = false;
+                            stoutCounter = 0;
+                        }
+
+                        // Only progress the math if actively animating
+                        if (!stoutAnimationDone) {
+                            stoutCounter++;
+                            double t = (double) stoutCounter / stoutMax;
+
+                            // Calculate the directional jumps
+                            int xDiff = (int) (worldX - gp.obj[i].worldX);
+                            int yDiff = (int) (worldY - gp.obj[i].worldY);
+
+                            gp.obj[i].animationOffsetX = (int) (xDiff * t);
+                            gp.obj[i].animationOffsetY = (int) (yDiff * t) + (int) (-4 * t * (1 - t) * 15);
+
+                            if (stoutCounter >= stoutMax) {
+                                stoutAnimationDone = true;
+
+                                gp.obj[i].animationOffsetX = 0;
+                                gp.obj[i].animationOffsetY = 0;
+
+                                // start battle
+                                gp.battleSystem.startBattle(new Stout());
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -403,6 +446,11 @@ public class Player extends Entity {
 
         }
         g2.drawImage(image, screenX, screenY + animationOffsetY, gp.tileSize, gp.tileSize, null);
+
+        if(!stoutAnimationDone && screenX <= gp.tileSize)
+        {
+            g2.drawImage(image, screenX + 10, screenY + stoutAnimationOffsetY, gp.tileSize, gp.tileSize, null);
+        }
 
 
     }

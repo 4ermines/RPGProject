@@ -1,6 +1,5 @@
 package tiles;
 
-import main.AssetSetter;
 import main.GamePanel;
 
 import javax.imageio.ImageIO;
@@ -9,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 
 public class TileManager {
 
@@ -74,23 +72,43 @@ public class TileManager {
             tile[12].collision = true;
 
             tile[13] = new Tile();
-            tile[13].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darktiletest.png"));
+            tile[13].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkTile.png"));
             tile[13].collision = false;
             tile[14] = new Tile();
-            tile[14].image = ImageIO.read(getClass().getResourceAsStream("/tiles/topdarkstair.png"));
+            tile[14].image = ImageIO.read(getClass().getResourceAsStream("/tiles/topDarkStair.png"));
             tile[14].collision = false;
             tile[15] = new Tile();
-            tile[15].image = ImageIO.read(getClass().getResourceAsStream("/tiles/middledarkstair.png"));
+            tile[15].image = ImageIO.read(getClass().getResourceAsStream("/tiles/bottomDarkStair.png"));
             tile[15].collision = false;
             tile[16] = new Tile();
             tile[16].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkwalltile.png"));
             tile[16].collision = true;
             tile[17] = new Tile();
-            tile[17].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkgrassytile.png"));
+            tile[17].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkTileGrassy1.png"));
             tile[17].collision = false;
             tile[18] = new Tile();
-            tile[18].image = ImageIO.read(getClass().getResourceAsStream("/tiles/forestgrass.png"));
+            tile[18].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkTileGrassy2.png"));
             tile[18].collision = false;
+            tile[19] = new Tile();
+            tile[19].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassBland.png"));
+            tile[19].collision = false;
+            tile[20] = new Tile();
+            tile[20].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPurpleFlower1.png"));
+            tile[20].collision = false;
+            tile[21] = new Tile();
+            tile[21].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPurpleFlower2.png"));
+            tile[21].collision = false;
+            tile[22] = new Tile();
+            tile[22].image = ImageIO.read(getClass().getResourceAsStream("/tiles/actualmiddledarkstair.png"));
+            tile[22].collision = false;
+            tile[23] = new Tile();
+            tile[23].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassRock.png"));
+            tile[23].collision = false;
+            tile[24] = new Tile();
+            tile[24].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassWhiteFlower.png"));
+            tile[24].collision = false;
+
+
 
 
 

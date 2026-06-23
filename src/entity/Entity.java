@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 
 public class Entity {
 
+    public String name;
     public int worldX, worldY;
     public int speed;
 
@@ -17,4 +18,9 @@ public class Entity {
     public Rectangle solidArea;
     public int solidAreaDefaultX, solidAreaDefaultY;
     public boolean collisionOn = false;
+
+    public int hp;
+    public int maxHp;
+
+    public BufferedImage icon;
 }

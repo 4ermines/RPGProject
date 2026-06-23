@@ -1,6 +1,14 @@
 package main;
 
+import battle.BattleAnimator;
+import battle.BattleSystem;
+import battle.BattleUI;
+import battle.Item;
+import entity.Enemy;
+import entity.PartyMember;
 import entity.Player;
+import entity.SiriusMagiosis;
+import object.AssetSetter;
 import object.SuperObject;
 import tiles.TileManager;
 
@@ -10,7 +18,8 @@ import java.awt.*;
 import static java.awt.Color.black;
 
 public class GamePanel extends JPanel implements Runnable {
-    // Screen settings
+
+    // SCREEN SETTINGS
     final int originalTileSize = 32; //32x32 tile
     final int scale = 2; //scale by 2
     public final int tileSize = originalTileSize * scale;
@@ -22,13 +31,12 @@ public class GamePanel extends JPanel implements Runnable {
     // WORLD SETTINGS
     public int maxWorldCol;
     public int maxWorldRow;
-    public int worldWidth = tileSize * maxWorldCol;
-    public int worldHeight = tileSize * maxWorldRow;
 
     // ALL THE STATES
     public int gameState;
     public final int playState = 1;
     public final int dialogueState = 2;
+    public final int battleState = 3;
     public final int animationState = 6;
     public final int packState = 7;
     public final int trainState = 8;
@@ -64,15 +72,20 @@ public class GamePanel extends JPanel implements Runnable {
     };
     public int mapIndex = 0;
 
+    // INSTANCES
     TileManager tileM = new TileManager(this);
-    KeyHandler keyH = new KeyHandler();
+    public KeyHandler keyH = new KeyHandler();
     Thread gameThread;
     public CollisionChecker cChecker = new CollisionChecker(this);
     public AssetSetter aSetter = new AssetSetter(this);
     public Player player = new Player(this, keyH);
-    public SuperObject[] obj = new SuperObject[20];
+    public SuperObject[] obj = new SuperObject[100];
+    public BattleSystem battleSystem = new BattleSystem(this);
+    public BattleUI battleUI = new BattleUI(this);
+    //    public javax.swing.JTextField codeInput = new javax.swing.JTextField();
+    public PartyMember siriusMagiosis = new SiriusMagiosis("Sirius Magiosis", 150, 30);
 
-
+    //  A GamePanel creates a new panel for running the game and its assets
     public GamePanel() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(black);
@@ -83,16 +96,36 @@ public class GamePanel extends JPanel implements Runnable {
                 new String[]{"You wake up. The sun shines brightly in your face."},
                 () -> {
                     dialogueLines = new String[]{
-                            "Something tells you it's going to be a good day.",
+                            "Something tells you it's going to be a good day. Press space to continue.",
                             "Use WASD to move."
                     };
                     dialogueIndex = 0;
                     gameState = dialogueState;
                 }
         );
+//        battleSystem.partyMembers.add(new PartyMember("Player", 100, 20, player.icon)); //maybe move later
+        battleSystem.partyMembers.add(siriusMagiosis); //maybe move later
+        battleSystem.partyMembers.add(new PartyMember("Fatty", 100, 10, player.icon));
+//        battleSystem.partyMembers.add(new PartyMember("Fatty2", 100, 10, player.icon));
+
+        battleSystem.inventory.add(new Item("Potion", Item.EffectType.HEAL, 5, "Heals a party member 5 HP"));
+
+
+
+//        codeInput.setVisible(false);
+//        codeInput.setFont(new Font("Monospaced", Font.PLAIN, 16));
+//        codeInput.setBounds(
+//                tileSize,
+//                (int)(9.5 * tileSize),
+//                screenWidth - 2 * tileSize,
+//                tileSize
+//        );
+//        this.setLayout(null);
+//        this.add(codeInput);
     }
 
-    public void setupGame() { //object
+    //  Set up game assets (objects)
+    public void setupGame() {
         aSetter.setObject();
     }
 
@@ -101,6 +134,7 @@ public class GamePanel extends JPanel implements Runnable {
         gameThread.start();
     }
 
+    // Game timer
     @Override
     public void run() {
 
@@ -138,7 +172,6 @@ public class GamePanel extends JPanel implements Runnable {
 
     }
 
-
 //    public void drawIntroText(Graphics2D g2) {
 //        g2.setColor(Color.white);
 //        g2.setFont(new Font("Arial", Font.PLAIN, 32));
@@ -148,6 +181,8 @@ public class GamePanel extends JPanel implements Runnable {
 //        g2.drawString(text, x, y);
 //
 //    }
+
+    // FADE MECHANICS
 
     public void startFadeFromBlack(String[] centeredText, Runnable afterFadeInAction) {
         this.fadeDialogueLines = centeredText;
@@ -166,9 +201,9 @@ public class GamePanel extends JPanel implements Runnable {
         this.fadeAlpha = 0; // start not black
         this.fadeCounter = 0;
         this.gameState = fadeOutState;
-
     }
 
+    // Changes the map when first train is entered
     public void enterTrain() {
         gameState = trainState;
         mapIndex = 1;
@@ -190,9 +225,8 @@ public class GamePanel extends JPanel implements Runnable {
 
 
     public void update() {
-        //fade in intro
+        // fade in intro
         int fadePauseCounter = 0;
-
         if (gameState == fadeOutState) {
             fadeAlpha += 5;
             if (fadeAlpha >= 255) {
@@ -247,13 +281,21 @@ public class GamePanel extends JPanel implements Runnable {
             player.update();
             player.checkObjectProximity();
             player.checkObjectInteraction();
-
-
+        } else if(gameState == battleState)
+        {
+            battleSystem.update();
         }
         // TESTING
         if (keyH.testPressed) {
             keyH.testPressed = false;
             enterTrain();
+        }
+        if(keyH.testBattlePressed)
+        {
+            keyH.testBattlePressed = false;
+            Enemy testBoss = new Enemy("Test Boss", 100, 10);
+            battleSystem.startBattle(testBoss);
+            System.out.println(testBoss.hp);
         }
 
     }
@@ -262,7 +304,6 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D)g;
-
 
         //TILE
         tileM.draw(g2);
@@ -275,7 +316,6 @@ public class GamePanel extends JPanel implements Runnable {
         }
 
 
-
         //PLAYER
         player.draw(g2);
 
@@ -285,6 +325,7 @@ public class GamePanel extends JPanel implements Runnable {
 //            drawIntroText(g2);
 //
 //        }
+
         if (gameState == fadeBlackHoldState || gameState == fadeInState || gameState == fadeOutState) {
             g2.setColor(new Color(0, 0, 0, fadeAlpha));
             g2.fillRect(0, 0, screenWidth, screenHeight);
@@ -307,7 +348,11 @@ public class GamePanel extends JPanel implements Runnable {
                  gameState = playState;
                  currentDialogue = "";
              }
+         }
 
+         if(gameState == battleState)
+         {
+             battleUI.draw(g2);
 
          }
 

@@ -9,10 +9,15 @@ public class KeyHandler implements KeyListener {
     public boolean spacePressed;
     public boolean interactPressed;
     public boolean testPressed;
+    public boolean testBattlePressed;
+    public boolean enterPressed;
+    public boolean escapePressed;
+
+    public char lastTypedChar = 0;
 
     @Override
     public void keyTyped(KeyEvent e) {
-
+        lastTypedChar = e.getKeyChar();
     }
 
     @Override
@@ -47,6 +52,21 @@ public class KeyHandler implements KeyListener {
             testPressed = true;
         }
 
+        if(code == KeyEvent.VK_Y)
+        {
+            testBattlePressed = true;
+        }
+
+        if(code == KeyEvent.VK_ENTER)
+        {
+            enterPressed = true;
+        }
+
+        if(code == KeyEvent.VK_ESCAPE)
+        {
+            escapePressed = true;
+        }
+
 
     }
 
@@ -75,12 +95,28 @@ public class KeyHandler implements KeyListener {
         }
 
         if (code == KeyEvent.VK_F) {
-            interactPressed = true;
+            interactPressed = false;
         }
 
         if (code == KeyEvent.VK_T) {
             testPressed = false;
         }
+
+        if(code == KeyEvent.VK_Y)
+        {
+            testBattlePressed = false;
+        }
+
+        if(code == KeyEvent.VK_ENTER)
+        {
+            enterPressed = false;
+        }
+
+        if(code == KeyEvent.VK_ESCAPE)
+        {
+            escapePressed = false;
+        }
+
 
     }
 
