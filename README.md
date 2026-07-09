@@ -16,4 +16,5 @@ Based on RyiSnow's game engine tutorial, this repository contains the code for a
 3. Run the main class file to start the game
 
 ## Current Focus
-* Designing the combat system and first boss fight.
+* Designing new train station maps, animating train doors and background.
+* Polishing older maps and dialogue
