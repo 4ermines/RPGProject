@@ -1,6 +1,4 @@
-package tiles;
-
-import main.GamePanel;
+package main;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -108,14 +106,79 @@ public class TileManager {
             tile[24].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassWhiteFlower.png"));
             tile[24].collision = false;
 
+            tile[25] = new Tile();
+            tile[25].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainFloorTile1.png"));
+            tile[25].collision = false;
 
+            tile[26] = new Tile();
+            tile[26].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainFloorTile2.png"));
+            tile[26].collision = false;
 
+            tile[27] = new Tile();
+            tile[27].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWallTile1.png"));
+            tile[27].collision = true;
 
+            tile[28] = new Tile();
+            tile[28].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWallTile2.png"));
+            tile[28].collision = true;
 
+            tile[29] = new Tile();
+            tile[29].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWallTileRight.png"));
+            tile[29].collision = true;
 
+            tile[30] = new Tile();
+            tile[30].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWallTileLeft.png"));
+            tile[30].collision = true;
 
+            tile[31] = new Tile();
+            tile[31].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainYellowTile1.png"));
+            tile[31].collision = false;
 
+            tile[32] = new Tile();
+            tile[32].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainYellowTile2.png"));
+            tile[32].collision = false;
 
+            tile[33] = new Tile();
+            tile[33].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainrailtile.png"));
+            tile[33].collision = true;
+
+            tile[34] = new Tile();
+            tile[34].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWallTileTopLCorner.png"));
+            tile[34].collision = true;
+
+            //more corners can be added later if necessary
+
+            tile[37] = new Tile();
+            tile[37].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorFloor.png"));
+            tile[37].collision = false;
+
+            tile[38] = new Tile();
+            tile[38].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWall1.png"));
+            tile[38].collision = true;
+
+            tile[39] = new Tile();
+            tile[39].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWall2.png"));
+            tile[39].collision = true;
+
+            tile[40] = new Tile();
+            tile[40].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWall3.png"));
+            tile[40].collision = true;
+
+            tile[41] = new Tile();
+            tile[41].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWall4.png"));
+            tile[41].collision = true;
+
+            tile[42] = new Tile();
+            tile[42].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorDoor.png"));
+            tile[42].collision = true;
+
+            tile[43] = new Tile();
+            tile[43].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWindow1.png"));
+            tile[43].collision = true;
+
+            tile[44] = new Tile();
+            tile[44].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWindow2.png"));
+            tile[44].collision = true;
 
             //add more later
 

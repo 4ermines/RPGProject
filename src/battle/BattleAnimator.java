@@ -64,9 +64,15 @@ public class BattleAnimator {
 
     public BufferedImage getCurrentFrame(Enemy enemy) {
         switch(currentAnim) {
-            case IDLE: return enemy.idleFrames[animFrame];
-            case ATTACK: return enemy.attackFrames[animFrame];
-            case DAMAGED: return enemy.damagedFrames[animFrame];
+            case IDLE:
+                return enemy.idleFrames[animFrame];
+            case ATTACK:
+                if (enemy.attackFrames == null || enemy.attackFrames.length == 0)
+                    return enemy.idleFrames[0]; // fallback to idle
+                return enemy.attackFrames[animFrame];
+
+            case DAMAGED:
+                return enemy.damagedFrames[animFrame];
         }
         return null;
     }

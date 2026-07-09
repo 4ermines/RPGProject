@@ -1,12 +1,13 @@
 package main;
 
 import java.awt.*;
+import java.util.Objects;
 
 public class TextHandler {
 
-    GamePanel gp;
+    main.GamePanel gp;
 
-    public TextHandler(GamePanel gp) {
+    public TextHandler(main.GamePanel gp) {
         this.gp = gp;
     }
 
@@ -17,6 +18,22 @@ public class TextHandler {
         int width = gp.screenWidth - 100;
         int height = 100;
         int lineHeight = 40;
+
+        if(!gp.currentSpeaker.isEmpty())
+        {
+            g2.setFont(new Font("Arial", Font.PLAIN, 24));
+            g2.setColor(new Color(100, 75, 30));
+            g2.fillRoundRect(x, y - 35, g2.getFontMetrics().stringWidth(gp.currentSpeaker) + 20, 35, 10, 10 );
+
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawRoundRect(x, y - 35, g2.getFontMetrics().stringWidth(gp.currentSpeaker) + 20, 35, 10, 10);
+            g2.setColor(Color.WHITE);
+
+            g2.drawString(gp.currentSpeaker, x + 10, y - 12);
+
+        }
+
 
         g2.setColor(new Color(0, 0, 0, 200));
         g2.fillRoundRect(x, y, width, height, 35, 35);

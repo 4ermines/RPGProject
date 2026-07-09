@@ -38,6 +38,8 @@ public class Player extends Entity {
     private int stoutAnimationOffsetY = 0;
     private int stoutCounter = 0;
     private int stoutMax = 30;
+    public boolean firstBattleLost = false;
+    public boolean stoutDefeated = false;
 
 
     public Player (GamePanel gp, KeyHandler keyH) {
@@ -81,6 +83,8 @@ public class Player extends Entity {
             right3 = ImageIO.read(getClass().getResourceAsStream("/player/right facing step backleg.png"));
 
             openletter = ImageIO.read(getClass().getResourceAsStream("/player/openletter.png"));
+
+            hurt = ImageIO.read(getClass().getResourceAsStream("/player/up facing hurt.png"));
 
             icon = ImageIO.read(getClass().getResourceAsStream("/ui/main1BattleIcon.png"));
 
@@ -152,6 +156,19 @@ public class Player extends Entity {
         }
         playAnimation();
 
+        if(firstBattleLost && !gp.siriusWalkDone)
+        {
+            if(gp.player.firstBattleLost) {
+                gp.sirius = new NPC(gp, NPC.NPCType.SIRIUS, 3 * gp.tileSize, (int) (5.3 * gp.tileSize));
+                gp.sirius.currentAnimation = NPC.NPCAnimationType.WALK;
+                gp.sirius.siriusWalkFrame = 1;
+                gp.siriusTargetX = gp.tileSize * 3;
+                gp.siriusTargetY = gp.tileSize * 13;
+                gp.gameState = gp.siriusWalkState;
+            }
+
+        }
+
     }
     public void checkObjectProximity() {
         for (int i = 0; i < gp.obj.length; i++) {
@@ -166,7 +183,7 @@ public class Player extends Entity {
                         if (gp.obj[i].name.equals("door1") && i == 1) {
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[]{
-                                    "Press 'F' to interact"
+                                    "Press Space to close this dialogue, then press F to interact with the door."
                             };
                             gp.obj[i].dialogueShown = true;
                             break;
@@ -176,7 +193,8 @@ public class Player extends Entity {
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[]{
                                     "You see a envelope near the front door.",
-                                    "You weren't expecting mail. Best to check it out."
+                                    "You weren't expecting mail. Best to check it out.",
+                                    "Press F to read the letter when in its range."
                             };
                             gp.obj[i].dialogueShown = true;
                             break;
@@ -185,20 +203,19 @@ public class Player extends Entity {
                     }
                 }
                 if (packDone) {
-                    gp.gameState = gp.playState;
                     if (distance < gp.tileSize) {
                         if (gp.obj[i].name.equals("door1") && i == 3) {
                             gp.enterTrain();
                         }
                     }
                 }
-                if (distance < 1.2*gp.tileSize && gp.obj[i] != null) {
-                    if (gp.obj[i].name.equals("traindoor") && !fadeTriggered) {
+                if (distance < 1.75 * gp.tileSize && gp.obj[i] != null) {
+                    if (gp.obj[i].name.equals("traindistancedetector") && !fadeTriggered) {
                         fadeTriggered = true;
                         gp.completeFade(
                                 new String[]{"You board the train."},
                                 () -> {
-                                    gp.enterNewTrain();
+                                    gp.enterInteriorTrain();
                                 },
                                 () -> {
                                     gp.dialogueIndex = 0;
@@ -214,7 +231,7 @@ public class Player extends Entity {
 
 
                 if (distance < 2 * gp.tileSize && gp.obj[i] != null) {
-                    if (gp.obj[i].name.equals("stoutstill")) {
+                    if (gp.obj[i].name.equals("stoutstill") && !firstBattleLost) {
 
                         if (stoutAnimationDone) {
                             stoutAnimationDone = false;
@@ -228,7 +245,7 @@ public class Player extends Entity {
 
                             // Calculate the directional jumps
                             int xDiff = (int) (worldX - gp.obj[i].worldX);
-                            int yDiff = (int) (worldY - gp.obj[i].worldY);
+                            int yDiff = (int) (worldY - gp.obj[i].worldY) - gp.tileSize;
 
                             gp.obj[i].animationOffsetX = (int) (xDiff * t);
                             gp.obj[i].animationOffsetY = (int) (yDiff * t) + (int) (-4 * t * (1 - t) * 15);
@@ -240,7 +257,8 @@ public class Player extends Entity {
                                 gp.obj[i].animationOffsetY = 0;
 
                                 // start battle
-                                gp.battleSystem.startBattle(new Stout());
+                                gp.battleSystem.isTutorialBattle = true;
+                                gp.battleSystem.startBattle(gp.stout);
                                 break;
                             }
                         }
@@ -277,7 +295,7 @@ public class Player extends Entity {
                             holdingLetter = true;
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[] {
-                                    "Congratulations! After careful evaluation, we are excited to offer \nyou a place at Magicode Academy!",
+                                    "Congratulations! After careful evaluation, we are excited to offer \nyou a place at [] Academy!",
                                     "By attending our school, you'll be surrounded by a community of scholars \nand have the chance to sharpen your magic skills."
                             };
                             gp.dialogueIndex = 0;
@@ -333,7 +351,7 @@ public class Player extends Entity {
                                 }
                             }
                         }
-                        if (gp.obj[5] == null && gp.obj[10] == null && gp.obj[11] == null) {
+                        if (!packDone && gp.obj[5] == null && gp.obj[10] == null && gp.obj[11] == null) {
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[]{
                                     "Nice! You've got everything you need. Hurry and catch the train!"
@@ -374,7 +392,8 @@ public class Player extends Entity {
             if (triggerLetterReactionDialogue) {
                 gp.dialogueLines = new String[] {
                         "You can't believe you made it!",
-                        "You should go pack your things ASAP!"
+                        "You should go pack your things ASAP!",
+                        "Walk up to the important items in your room and press F to pack them."
                 };
                 gp.dialogueIndex = 0;
                 triggerLetterReactionDialogue = false;
@@ -395,6 +414,11 @@ public class Player extends Entity {
         BufferedImage image = null;
         if (holdingLetter && gp.gameState == gp.dialogueState) {
             image = openletter;
+        }else if(firstBattleLost && !stoutDefeated) {
+            if(!gp.siriusMet)
+                image = hurt;
+            else
+                image = up2;
         } else if (currentAnimation == AnimationType.BOUNCE) {
             image = down2;
         } else {
@@ -447,10 +471,10 @@ public class Player extends Entity {
         }
         g2.drawImage(image, screenX, screenY + animationOffsetY, gp.tileSize, gp.tileSize, null);
 
-        if(!stoutAnimationDone && screenX <= gp.tileSize)
-        {
-            g2.drawImage(image, screenX + 10, screenY + stoutAnimationOffsetY, gp.tileSize, gp.tileSize, null);
-        }
+//        if(!stoutAnimationDone && 0 < stoutCounter && stoutCounter <= stoutMax)
+//        {
+//            g2.drawImage(image, screenX + 10, screenY + stoutAnimationOffsetY, gp.tileSize, gp.tileSize, null);
+//        }
 
 
     }

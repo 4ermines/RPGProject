@@ -45,6 +45,14 @@ public class BattleSystem {
     int selectedTargetIndex = 0;
     private Item pendingItem;
     private int turnIndexBeforeTargeting;
+    public boolean isTutorialBattle = false;
+    private int tutorialTurnNumber;
+    public boolean isSiriusTip = false;
+    public String[] battleDialogueLines;
+    public String battleCurrentDialogue = "";
+    public int battleDialogueIndex;
+    public boolean isFirstTurnTutorial = false;
+
 
     //inv for items
     public ArrayList<Item> inventory = new ArrayList<>();
@@ -58,7 +66,12 @@ public class BattleSystem {
 
     private void loadChallenges()
     {
-        challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "for (int i = 0; i < 5; ___) {", new String[]{ "i++", "i += 1", "i = i + 1" }, 40, 15));
+        if (currentEnemy == gp.stout)
+        {
+            challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "System.___.print(\"Hello World\")", new String[]{"out"}, 40, 15));
+        } else {
+            challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "for (int i = 0; i < 5; ___) {", new String[]{"i++", "i += 1", "i = i + 1"}, 40, 15));
+        }
     }
 
     public void update()
@@ -73,9 +86,18 @@ public class BattleSystem {
             enemyTimer++;
             if(enemyTimer > 120)
             {
+                if(isTutorialBattle)
+                {
+                    tutorialTurnNumber++;
+                }
+
+                checkBattleEnd(); // moved here
+
                 enemyTimer = 0;
                 battleLog = "";
-                phase = BattlePhase.PLAYER_CHOOSE_ACTION;
+                if (phase != BattlePhase.BATTLE_WON && phase != BattlePhase.BATTLE_LOST) {
+                    phase = BattlePhase.PLAYER_CHOOSE_ACTION;
+                }
                 activePartyIndex = (activePartyIndex + 1) % partyMembers.size();
                 while(partyMembers.get(activePartyIndex).hp <= 0)
                 {
@@ -109,7 +131,6 @@ public class BattleSystem {
                 resultTimer++;
                 if (resultTimer > 120) {
                     resultTimer = 0;
-                    checkBattleEnd(); // moved here
                     if (phase != BattlePhase.BATTLE_WON && phase != BattlePhase.BATTLE_LOST) {
                         phase = BattlePhase.ENEMY_TURN;
                     }
@@ -130,9 +151,36 @@ public class BattleSystem {
             if(gp.keyH.spacePressed)
             {
                 gp.gameState = gp.playState;
+                if(gp.player.stoutDefeated) {
+                    gp.gameState = gp.dialogueState;
+                    gp.dialogueSpeakers = new String[]{
+                            "Purple Wizard",
+                            "Player",
+                            "Sirius Magiosis",
+                            "Sirius Magiosis",
+                            "Player",
+                            "Sirius Magiosis",
+                            "Player",
+                            "Sirius Magiosis"
+                    };
+                    ;
+                    gp.dialogueLines = new String[]{
+                            "I knew you could do it!",
+                            "Thanks a bunch for your  help. Who are you anyway?",
+                            "Sirius Magiosis, the one and only!",
+                            "Say, what are you doing here in the middle of the forest anyway?",
+                            "I was invited to [insert name] academy, but I'm not sure I took the right train...",
+                            "Hahahahaha! No way! I just came from there now!",
+                            "What!? Really?",
+                            "Yeah, it's past the forest. Follow me and I'll show you."
+                    };
+                }
+            }
+            for(PartyMember member : partyMembers)
+            {
+                member.hp = member.maxHp;
             }
         }
-
     }
 
     public void submitAnswer()
@@ -211,23 +259,65 @@ public class BattleSystem {
             switch(selectedAction)
             {
                 case 0:
-                    startCodeChallenge();
+                    if(!isTutorialBattle) {
+                        startCodeChallenge();
+                        if(isFirstTurnTutorial)
+                        {
+                            gp.gameState = gp.battleDialogueState;
+                            gp.battleSystem.isSiriusTip = true;
+                            gp.battleSystem.battleDialogueLines = new String[]{
+                                    "This is where you write all your code.",
+                                    "Before you move on, it'd probably be helpful to know how to write a print statement...",
+                                    "The structure of a print statement is: System.out.print(\"Hello World!\");",
+//                                    "In this example, the computer will display the text \"Hello World!\"",
+//                                    "If you see \"ln\" at the end of the statement, that just means it will create a new line after printing text on the screen",
+                                    "Also, Don't forget spells are case sensitive!",
+                                    "That means like, it won't work if you change the capitalization of letters or something.",
+                                    "A mistake like that would be pretty embarrassing for you!"
+                            };
+
+                            gp.siriusBattleTips = new BufferedImage[]{
+                                    gp.siriusBattleTip2,
+                                    gp.siriusBattleTip3,
+                                    gp.siriusBattleTip1,
+                                    gp.siriusBattleTip2,
+                                    gp.siriusBattleTip1,
+                                    gp.siriusBattleTip2,
+                                    gp.siriusBattleTip2,
+                                    gp.siriusBattleTip3
+                            };
+
+                            gp.battleSystem.battleDialogueIndex = 0;
+
+                            if(isFirstTurnTutorial)
+                            {
+                                isFirstTurnTutorial = false;
+                            }
+                        }
+                    } else
+                    {
+                        battleLog = "You tried to attack, but the enemy was too strong!";
+                        phase = BattlePhase.SHOW_RESULT;
+                    }
                     break;
                 case 1:
-                    //TODO: implement skills
-                    selectedSkill = 0;
-                    phase = BattlePhase.PLAYER_CHOOSE_SKILL;
+                    if(!isFirstTurnTutorial) {
+                        selectedSkill = 0;
+                        phase = BattlePhase.PLAYER_CHOOSE_SKILL;
+                    }
                     break;
                 case 2:
-                    //TODO: implement items
-                    selectedItem = 0;
-                    phase = BattlePhase.PLAYER_CHOOSE_ITEM;
+                    if(!isFirstTurnTutorial) {
+                        selectedItem = 0;
+                        phase = BattlePhase.PLAYER_CHOOSE_ITEM;
+                    }
                     break;
                 case 3:
-                    //TODO: implement defend
-                    partyMembers.get(activePartyIndex).isDefending = true;
-                    battleLog = partyMembers.get(activePartyIndex).name + " defends against enemy attack!";
-                    phase = BattlePhase.SHOW_RESULT;
+                    if(!isFirstTurnTutorial) {
+                        partyMembers.get(activePartyIndex).isDefending = true;
+                        battleLog = partyMembers.get(activePartyIndex).name + " defends against enemy attack!";
+                        phase = BattlePhase.SHOW_RESULT;
+                    }
                     break;
             }
             gp.keyH.spacePressed = false;
@@ -482,6 +572,8 @@ public class BattleSystem {
         gp.gameState = gp.battleState;
         currentEnemy = enemy;
         phase = BattlePhase.PLAYER_CHOOSE_ACTION;
+        tutorialTurnNumber = 0;
+
     }
 
     private void checkBattleEnd()
@@ -489,6 +581,12 @@ public class BattleSystem {
         if(currentEnemy.hp <= 0)
         {
             phase = BattlePhase.BATTLE_WON;
+            if(!gp.player.stoutDefeated)
+            {
+                gp.player.stoutDefeated = true;
+                gp.obj[38] = null;
+
+            }
             return;
         }
 
@@ -505,6 +603,15 @@ public class BattleSystem {
         if(allDead)
         {
             phase = BattlePhase.BATTLE_LOST;
+        }
+
+        if(isTutorialBattle && tutorialTurnNumber > 2)
+        {
+            phase = BattlePhase.BATTLE_LOST;
+            isTutorialBattle = false;
+            gp.player.firstBattleLost = true;
+            gp.player.hp = gp.player.maxHp;
+            battleLog = "";
         }
     }
 
