@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import static java.awt.Color.black;
+import static java.awt.Color.pink;
 
 public class GamePanel extends JPanel implements Runnable {
 
@@ -43,6 +44,7 @@ public class GamePanel extends JPanel implements Runnable {
     public final int fadeBlackHoldState = 11;
     public final int siriusWalkState = 12;
     public final int battleDialogueState = 13;
+    public final int siriusFollowState = 14;
 
     // FADE DIALOGUE STUFF
     public String[] fadeDialogueLines;
@@ -59,7 +61,6 @@ public class GamePanel extends JPanel implements Runnable {
     public String currentDialogue = "";
     public String currentSpeaker = "";
     public String[] dialogueSpeakers;
-
 
     public boolean startAnimationAfterDialogue = false;
     public boolean dialogueFinished = false;
@@ -98,6 +99,24 @@ public class GamePanel extends JPanel implements Runnable {
     public BufferedImage[] siriusBattleTips;
     public int siriusBattleTipIndex = 0;
     public BufferedImage siriusBattleTip1, siriusBattleTip2, siriusBattleTip3;
+
+    //NPCs
+    public NPC firedMan;
+    public NPC pinkGirl;
+    public NPC spidermanKid;
+
+    //TRAIN
+    private int lastDoorFrame = -1;
+    public boolean firstTrainFadeTriggered = false;
+    public boolean triggerTrainAnimation = false;
+    public boolean trainAnimationDone;
+    public int trainAnimationCounter = 0;
+    public int trainAnimationMax = 30;
+    public int trainAnimationIndex = 0;
+
+    public boolean firedManTalkDone = false;
+    public boolean pinkGirlTalkDone = false;
+    public boolean spidermanKidTalkDone = false;
 
     {
         try {
@@ -260,12 +279,54 @@ public class GamePanel extends JPanel implements Runnable {
         player.worldY = 18 * tileSize;
     }
 
+    public void animateTrainDoors()
+    {
+        trainAnimationCounter++;
+        if(trainAnimationCounter >= trainAnimationMax && trainAnimationIndex < 3)
+        {
+            trainAnimationIndex++;
+            trainAnimationCounter = 0;
+        }
+
+    }
+
 
 
     public void update() {
 
         if (sirius != null) sirius.update();
 
+        if(firedMan != null) firedMan.update();
+
+        if(pinkGirl != null) pinkGirl.update();
+
+        if(spidermanKid != null) spidermanKid.update();
+
+        if(triggerTrainAnimation && !firstTrainFadeTriggered)
+        {
+            animateTrainDoors();
+            if(trainAnimationIndex != lastDoorFrame) {
+                lastDoorFrame = trainAnimationIndex; //ensure only 3 objs are made, not 180
+                switch (trainAnimationIndex) {
+                    case 1:
+                        obj[13] = new SuperObject("traindoorhalfopen", 6 * tileSize, 1.65 * tileSize, true);
+                        obj[13].displayWidth = (int) (obj[13].image.getWidth() * 1.5);
+                        obj[13].displayHeight = (int) (obj[13].image.getHeight() * 1.5);
+                        break;
+                    case 2:
+                        obj[13] = new SuperObject("traindoormostlyopen", 6 * tileSize, 1.65 * tileSize, true);
+                        obj[13].displayWidth = (int) (obj[13].image.getWidth() * 1.5);
+                        obj[13].displayHeight = (int) (obj[13].image.getHeight() * 1.5);
+                        break;
+                    case 3:
+                        obj[13] = new SuperObject("traindooropen", 6 * tileSize, 1.65 * tileSize, true);
+                        obj[13].displayWidth = (int) (obj[13].image.getWidth() * 1.5);
+                        obj[13].displayHeight = (int) (obj[13].image.getHeight() * 1.5);
+                        trainAnimationDone = true;
+                        break;
+                }
+            }
+        }
 
         // fade in intro
         int fadePauseCounter = 0;
@@ -345,7 +406,16 @@ public class GamePanel extends JPanel implements Runnable {
                             battleSystem.isFirstTurnTutorial = true;
                         }
 
+                    } else {
+                        if(player.stoutDefeated)
+                        {
+                            sirius.currentAnimation = NPC.NPCAnimationType.WALK_UPWARD;
+                            siriusTargetX = sirius.worldX;
+                            siriusTargetY = 2 * tileSize;
+                            gameState = siriusFollowState;
+                        }
                     }
+
                 }
 
 
@@ -363,6 +433,7 @@ public class GamePanel extends JPanel implements Runnable {
             player.update();
             player.checkObjectProximity();
             player.checkObjectInteraction();
+            player.checkNPCInteraction();
         } else if (gameState == packState) {
             player.update();
             player.checkObjectProximity();
@@ -373,9 +444,11 @@ public class GamePanel extends JPanel implements Runnable {
             player.update();
             player.checkObjectProximity();
             player.checkObjectInteraction();
+            player.checkNPCInteraction();
         } else if(gameState == battleState) {
             battleSystem.update();
-        } else if(gameState == siriusWalkState)
+        }
+        else if(gameState == siriusWalkState)
         {
             if(sirius != null)
             {
@@ -401,7 +474,35 @@ public class GamePanel extends JPanel implements Runnable {
                 }
             }
 
-        } else if (gameState == battleDialogueState && keyH.spacePressed)
+        } else if(gameState == siriusFollowState)
+        {
+            player.update();
+
+            double xDistance = Math.abs(player.worldX - sirius.worldX);
+            double yDistance = Math.abs(player.worldY - sirius.worldY);
+            double distance = Math.max(xDistance, yDistance);
+
+            if(distance < 3 * tileSize && sirius.worldY != siriusTargetY)
+            {
+                sirius.currentAnimation = NPC.NPCAnimationType.WALK_UPWARD;
+                int siriusSpeed = 2;
+
+                if(Math.abs(sirius.worldX - siriusTargetX) > siriusSpeed)
+                {
+                    sirius.worldX += (sirius.worldX < siriusTargetX) ? siriusSpeed : -siriusSpeed;
+                } else if (Math.abs(sirius.worldY - siriusTargetY) > siriusSpeed) {
+                    sirius.worldY += (sirius.worldY < siriusTargetY) ? siriusSpeed : -siriusSpeed;
+                } else {
+                    sirius.worldX = siriusTargetX;
+                    sirius.worldY = siriusTargetY;
+                }
+
+            } else {
+                sirius.currentAnimation = NPC.NPCAnimationType.SIRIUS_WAIT;
+            }
+
+        }
+        else if (gameState == battleDialogueState && keyH.spacePressed)
         {
             keyH.spacePressed = false;
             battleSystem.battleDialogueIndex++;
@@ -429,13 +530,13 @@ public class GamePanel extends JPanel implements Runnable {
             keyH.testPressed = false;
             enterTrain();
         }
-        if(keyH.testBattlePressed)
-        {
-            keyH.testBattlePressed = false;
-            Enemy testBoss = new Enemy("Test Boss", 100, 10);
-            battleSystem.startBattle(testBoss);
-            System.out.println(testBoss.hp);
-        }
+//        if(keyH.testBattlePressed)
+//        {
+//            keyH.testBattlePressed = false;
+//            Enemy testBoss = new Enemy("Test Boss", 100, 10);
+//            battleSystem.startBattle(testBoss);
+//            System.out.println(testBoss.hp);
+//        }
 
     }
 
@@ -473,6 +574,13 @@ public class GamePanel extends JPanel implements Runnable {
 
         //PLAYER
         player.draw(g2);
+
+        //NPCs
+        if (sirius != null) sirius.draw(g2);
+        if(firedMan != null) firedMan.draw(g2);
+        if(pinkGirl != null) pinkGirl.draw(g2);
+        if(spidermanKid != null) spidermanKid.draw(g2);
+
 
 //        if (gameState == introState) {
 //            g2.setColor(black);
@@ -514,9 +622,6 @@ public class GamePanel extends JPanel implements Runnable {
                 battleSystem.battleCurrentDialogue = "";
             }
         }
-
-
-        if (sirius != null) sirius.draw(g2);
 
 
         if(gameState == battleState || gameState == battleDialogueState)

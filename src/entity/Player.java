@@ -33,13 +33,14 @@ public class Player extends Entity {
     private int animationOffsetY = 0;
     private boolean animationDone = false;
     private boolean triggerLetterReactionDialogue = false;
-    private boolean fadeTriggered = false;
+    private boolean secondTrainFadeTriggered = false;
     private boolean stoutAnimationDone;
     private int stoutAnimationOffsetY = 0;
     private int stoutCounter = 0;
     private int stoutMax = 30;
     public boolean firstBattleLost = false;
     public boolean stoutDefeated = false;
+    public boolean exitTrain = false;
 
 
     public Player (GamePanel gp, KeyHandler keyH) {
@@ -115,7 +116,12 @@ public class Player extends Entity {
             gp.cChecker.checkTile(this);
 
             // check object collision
-            int objIndex = gp.cChecker.checkObject(this, true);
+//            int objIndex = gp.cChecker.checkObject(this, true);
+            gp.cChecker.checkObject(this, true);
+
+
+            //check NPC collision
+            gp.cChecker.checkNPC(this);
 
             // if collision is false, player can move
             if (!collisionOn) {
@@ -160,7 +166,7 @@ public class Player extends Entity {
         {
             if(gp.player.firstBattleLost) {
                 gp.sirius = new NPC(gp, NPC.NPCType.SIRIUS, 3 * gp.tileSize, (int) (5.3 * gp.tileSize));
-                gp.sirius.currentAnimation = NPC.NPCAnimationType.WALK;
+                gp.sirius.currentAnimation = NPC.NPCAnimationType.WALK_DOWNWARD;
                 gp.sirius.siriusWalkFrame = 1;
                 gp.siriusTargetX = gp.tileSize * 3;
                 gp.siriusTargetY = gp.tileSize * 13;
@@ -205,13 +211,24 @@ public class Player extends Entity {
                 if (packDone) {
                     if (distance < gp.tileSize) {
                         if (gp.obj[i].name.equals("door1") && i == 3) {
-                            gp.enterTrain();
+                            gp.completeFade(null,
+                                    () -> {
+                                        gp.enterTrain();
+                                    },
+
+                                    () -> {
+                                        gp.gameState = gp.playState;
+                                    });
                         }
                     }
                 }
                 if (distance < 1.75 * gp.tileSize && gp.obj[i] != null) {
-                    if (gp.obj[i].name.equals("traindistancedetector") && !fadeTriggered) {
-                        fadeTriggered = true;
+                    if (gp.obj[i].name.equals("traindistancedetector") && !gp.triggerTrainAnimation)
+                    {
+                        gp.triggerTrainAnimation = true;
+                    }
+                    if (gp.obj[i].name.equals("traindistancedetector") && !gp.firstTrainFadeTriggered && gp.trainAnimationDone) {
+                        gp.firstTrainFadeTriggered = true;
                         gp.completeFade(
                                 new String[]{"You board the train."},
                                 () -> {
@@ -221,8 +238,8 @@ public class Player extends Entity {
                                     gp.dialogueIndex = 0;
                                     gp.gameState = gp.dialogueState;
                                     gp.dialogueLines = new String[]{
-                                            "The station is eerily empty.",
-                                            "Did you take the right train?"
+                                            "The trip is quite long. You should do something to pass the time.",
+                                            "Press F to interact with your fellow passengers."
                                     };
                                 }
                         );
@@ -358,12 +375,129 @@ public class Player extends Entity {
                             };
 
                             packDone = true;
+                            gp.dialogueFinished = false;
                         }
                     }
                 }
             }
         }
+//        keyH.interactPressed = false;
+    }
+
+    public void checkNPCInteraction()
+    {
+        NPC[] npcs = {gp.firedMan, gp.pinkGirl, gp.spidermanKid};
+
+        for(NPC npc : npcs) {
+            if (npc == null) continue;
+
+            double xDistance = Math.abs(worldX - npc.worldX);
+            double yDistance = Math.abs(worldY - npc.worldY);
+            double distance = Math.max(xDistance, yDistance);
+
+            if (distance < 1 * gp.tileSize && npc == gp.firedMan) {
+                if (keyH.interactPressed && !gp.firedManTalkDone) {
+                    gp.gameState = gp.dialogueState;
+                    gp.dialogueLines = new String[]{
+                            "A suited man cries, holding a cardboard box full of office supplies.",
+                            "This is the worst day of my life...",
+                            "Twenty years with those scumbags, all gone to sh*t just like that.",
+                            "Excuse me, sir, are you alright? What happened?",
+                            "*Sniff* I was the best man on their team. The BEST! Thrown out on the road \nlike trash!",
+                            "It's over for me. IT'S OVERRRR!!! WAAAAAAAAAHHHHH!!!!!!!!!!!!!!!!!!",
+                            "Maybe it's best to leave him alone..."
+                    };
+                    gp.dialogueSpeakers = new String[]{
+                            "",
+                            "Tearful Man",
+                            "Tearful Man",
+                            "Player",
+                            "Tearful Man",
+                            "Tearful Man",
+                            ""
+                    };
+                    gp.dialogueIndex = 0;
+                    gp.firedManTalkDone = true;
+                }
+            }
+                if (distance < 1 * gp.tileSize && npc == gp.pinkGirl) {
+                    if(keyH.interactPressed && !gp.pinkGirlTalkDone) {
+                        gp.gameState = gp.dialogueState;
+                        gp.dialogueLines = new String[]{
+                                "You see a fashionable girl with pink hair.",
+                                "Hey, I love your outfit. It's very... pink.",
+                                "Thanks! If I'm gonna work all day, I might as well look good while \ndoing it...",
+                                "Wow, I actually love your pajamas! It reminds me of my nana.",
+                                "You suddenly feel self conscious. Maybe you should have changed into \nsomething better when you left."
+                        };
+                        gp.dialogueSpeakers = new String[]{
+                                "",
+                                "Player",
+                                "Pink Girl",
+                                "Pink Girl",
+                                ""
+                        };
+                        gp.dialogueIndex = 0;
+                        gp.pinkGirlTalkDone = true;
+                    }
+                }
+
+                if (distance < 1 * gp.tileSize && npc == gp.spidermanKid) {
+                    if(keyH.interactPressed && !gp.spidermanKidTalkDone) {
+                        gp.gameState = gp.dialogueState;
+                        gp.dialogueLines = new String[]{
+                                "A kid dressed as Spiderman excitedly flaps his arms around.",
+                                "What are you doing here alone?",
+                                "The city needs me!",
+                                "Kid, where are your parents?",
+                                "They were taken by Green Goblin!",
+                                "Are you... here alone?",
+                                "Please don't tell my mom...",
+                                "This kid is totally lost in fantasy."
+                        };
+                        gp.dialogueSpeakers = new String[]{
+                                "",
+                                "Player",
+                                "Kid",
+                                "Player",
+                                "Kid",
+                                "Player",
+                                "Kid",
+                                ""
+                        };
+                        gp.dialogueIndex = 0;
+                        gp.spidermanKidTalkDone = true;
+                    }
+
+                }
+            }
         keyH.interactPressed = false;
+        if(!exitTrain)
+        {
+            if(gp.firedManTalkDone && gp.pinkGirlTalkDone && gp.spidermanKidTalkDone && gp.gameState != gp.dialogueState)
+            {
+                gp.completeFade(
+                        new String[]{"You leave the train."},
+                        () -> {
+                            gp.enterNewTrain();
+                        },
+                        () -> {
+                            gp.gameState = gp.dialogueState;
+                            gp.dialogueLines = new String[]{
+                                    "The station is eerily empty.",
+                                    "Was this the right stop?"
+                            };
+                            gp.dialogueSpeakers = new String[]{
+                                    "",
+                                    ""
+                            };
+                            exitTrain = true;
+                        }
+                );
+
+            }
+        }
+
     }
 
     public void playAnimation() {

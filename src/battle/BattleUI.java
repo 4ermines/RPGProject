@@ -144,8 +144,10 @@ public class BattleUI {
         g2.setColor(Color.WHITE);
         g2.drawString("BATTLE CONTROLS", 18, 30);
         g2.drawString("WASD - Select", 18, 80);
-        g2.drawString("SPACE - Confirm", 18, 110);
+        g2.drawString("SPACE - Select", 18, 110);
         g2.drawString("ESC - Back", 18, 140);
+        g2.drawString("ENTER - Submit", 18, 170);
+
 
 
     }

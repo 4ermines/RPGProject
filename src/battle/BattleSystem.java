@@ -151,7 +151,7 @@ public class BattleSystem {
             if(gp.keyH.spacePressed)
             {
                 gp.gameState = gp.playState;
-                if(gp.player.stoutDefeated) {
+                if(gp.player.stoutDefeated && gp.mapIndex == 2) {
                     gp.gameState = gp.dialogueState;
                     gp.dialogueSpeakers = new String[]{
                             "Purple Wizard",
@@ -271,6 +271,7 @@ public class BattleSystem {
                                     "The structure of a print statement is: System.out.print(\"Hello World!\");",
 //                                    "In this example, the computer will display the text \"Hello World!\"",
 //                                    "If you see \"ln\" at the end of the statement, that just means it will create a new line after printing text on the screen",
+                                    "Answer the question by typing the correct answer, and hit enter to submit your code.",
                                     "Also, Don't forget spells are case sensitive!",
                                     "That means like, it won't work if you change the capitalization of letters or something.",
                                     "A mistake like that would be pretty embarrassing for you!"
@@ -281,8 +282,9 @@ public class BattleSystem {
                                     gp.siriusBattleTip3,
                                     gp.siriusBattleTip1,
                                     gp.siriusBattleTip2,
+//                                    gp.siriusBattleTip2,
+//                                    gp.siriusBattleTip1,
                                     gp.siriusBattleTip1,
-                                    gp.siriusBattleTip2,
                                     gp.siriusBattleTip2,
                                     gp.siriusBattleTip3
                             };

@@ -16,6 +16,7 @@ public class Main {
 
 
     window.setTitle("Magicode");
+
     window.setLocationRelativeTo(null);
     window.setVisible(true);
 

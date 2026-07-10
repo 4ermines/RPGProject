@@ -1,6 +1,7 @@
 package main;
 
 import entity.Entity;
+import entity.NPC;
 import object.SuperObject;
 
 import java.awt.*;
@@ -127,6 +128,37 @@ public class CollisionChecker {
             }
         }
 
+
+
         return index;
+    }
+
+    public void checkNPC(Entity entity) {
+        NPC[] npcs = {gp.firedMan, gp.pinkGirl, gp.spidermanKid};
+        for (NPC npc : npcs) {
+            if (npc == null) continue;
+
+            Rectangle entityArea = new Rectangle(
+                    entity.worldX + entity.solidArea.x,
+                    entity.worldY + entity.solidArea.y,
+                    entity.solidArea.width, entity.solidArea.height
+            );
+            Rectangle npcArea = new Rectangle(
+                    npc.worldX + npc.solidArea.x,
+                    npc.worldY + npc.solidArea.y,
+                    npc.solidArea.width, npc.solidArea.height
+            );
+
+            switch (entity.direction) {
+                case "up": entityArea.y -= entity.speed; break;
+                case "down": entityArea.y += entity.speed; break;
+                case "left": entityArea.x -= entity.speed; break;
+                case "right": entityArea.x += entity.speed; break;
+            }
+
+            if (entityArea.intersects(npcArea)) {
+                entity.collisionOn = true;
+            }
+        }
     }
 }

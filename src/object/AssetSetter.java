@@ -22,6 +22,10 @@ public class AssetSetter {
             //sets objects for roommap1
             case (0):
                 gp.sirius = null;
+                gp.firedMan = null;
+                gp.pinkGirl = null;
+                gp.spidermanKid = null;
+
                 gp.obj[0] = new SuperObject("bedbigger", 2*gp.tileSize, 2 * gp.tileSize, true);
                 gp.obj[1] = new SuperObject("door1", 12*gp.tileSize, 4 * gp.tileSize, true);
                 gp.obj[2] = new SuperObject("door2", 26*gp.tileSize, 6 * gp.tileSize, true);
@@ -37,11 +41,15 @@ public class AssetSetter {
                 break;
             case (1):
                 gp.sirius = null;
+                gp.firedMan = null;
+                gp.pinkGirl = null;
+                gp.spidermanKid = null;
+
                 gp.obj[12] = new SuperObject("traindistancedetector", 12.7*gp.tileSize, 2.2 * gp.tileSize, true);
                 gp.obj[12].displayWidth = (int) (gp.obj[12].image.getWidth() * 1.5);
                 gp.obj[12].displayHeight = (int) (gp.obj[12].image.getHeight() * 1.5);
 
-                gp.obj[13] = new SuperObject("traindooropen", 6*gp.tileSize, 1.65 * gp.tileSize, true);
+                gp.obj[13] = new SuperObject("traindoorclosed", 6*gp.tileSize, 1.65 * gp.tileSize, true);
                 gp.obj[13].displayWidth = (int) (gp.obj[13].image.getWidth() * 1.5);
                 gp.obj[13].displayHeight = (int) (gp.obj[13].image.getHeight() * 1.5);
 
@@ -49,11 +57,16 @@ public class AssetSetter {
                 break;
 
             case (2): //9 more
+                gp.firedMan = null;
+                gp.pinkGirl = null;
+                gp.spidermanKid = null;
+
 //                gp.obj[12] = new SuperObject("trainnodoor", 18*gp.tileSize, 16.8 * gp.tileSize, true);
 //                gp.obj[12].displayWidth = (int) (gp.obj[12].image.getWidth() * 2.5);
 //                gp.obj[12].displayHeight = (int) (gp.obj[12].image.getHeight() * 2.5);
 
 //                gp.obj[13] = new SuperObject("traindoor", 30.3*gp.tileSize, 18.5 * gp.tileSize, false);
+
                 gp.obj[13] = new SuperObject("traindoorclosed", 23*gp.tileSize, 15.5 * gp.tileSize, true);
                 gp.obj[13].displayWidth = (int) (gp.obj[13].image.getWidth() * 1.5);
                 gp.obj[13].displayHeight = (int) (gp.obj[13].image.getHeight() * 1.5);
@@ -244,6 +257,16 @@ public class AssetSetter {
 
                 break;
             case (3):
+                gp.sirius = null;
+
+                gp.firedMan = new NPC(gp, NPC.NPCType.FIREDMAN, 6 * gp.tileSize, (int) (0.8 * gp.tileSize));
+                gp.firedMan.currentAnimation = NPC.NPCAnimationType.CRY;
+
+                gp.pinkGirl = new NPC(gp, NPC.NPCType.PINKGIRL, 4 * gp.tileSize, (int) (0.5 * gp.tileSize));
+
+                gp.spidermanKid = new NPC(gp, NPC.NPCType.SPIDERMANKID, 8 * gp.tileSize, (int) (2 * gp.tileSize));
+                gp.spidermanKid.currentAnimation = NPC.NPCAnimationType.EXCITE;
+
                 gp.obj[70] = new SuperObject("trainSeats", 3 * gp.tileSize, 0.5 * gp.tileSize, true);
                 gp.obj[70].displayWidth = (int) (gp.obj[70].image.getWidth() * 2.5);
                 gp.obj[70].displayHeight = (int) (gp.obj[70].image.getHeight() * 2.5);
