@@ -4,7 +4,7 @@ import javax.swing.*;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
+ class Main {
     public static void main(String[] args) {
 
     JFrame window = new JFrame();
@@ -16,7 +16,6 @@ public class Main {
 
 
     window.setTitle("Magicode");
-
     window.setLocationRelativeTo(null);
     window.setVisible(true);
 
@@ -26,7 +25,6 @@ public class Main {
 
     Game game = new Game();
     game.start();
-
 
     }
 }

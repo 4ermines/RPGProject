@@ -4,6 +4,7 @@ import entity.Enemy;
 import entity.PartyMember;
 import entity.Stout;
 import main.GamePanel;
+import object.SuperObject;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -37,7 +38,6 @@ public class BattleSystem {
     public int selectedSkill = 0;
     public int selectedItem = 0;
     public String battleLog = "";
-    public String typedText = "";
     private int resultTimer = 0;
     private int enemyTimer = 0;
     public ArrayList<PartyMember> partyMembers = new ArrayList<>();
@@ -46,12 +46,14 @@ public class BattleSystem {
     private Item pendingItem;
     private int turnIndexBeforeTargeting;
     public boolean isTutorialBattle = false;
-    private int tutorialTurnNumber;
+    public int tutorialTurnNumber;
     public boolean isSiriusTip = false;
     public String[] battleDialogueLines;
     public String battleCurrentDialogue = "";
     public int battleDialogueIndex;
     public boolean isFirstTurnTutorial = false;
+    public boolean siriusRescued = false;
+    public boolean introMessageShown = false;
 
 
     //inv for items
@@ -68,7 +70,7 @@ public class BattleSystem {
     {
         if (currentEnemy == gp.stout)
         {
-            challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "System.___.print(\"Hello World\")", new String[]{"out"}, 40, 15));
+            challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "Write the expression that fills in the blank: System.___.print(\"Hello World\")", new String[]{"out"}, 40, 15));
         } else {
             challengePool.add(new CodingChallenge(CodingChallenge.Type.FILL_IN_BLANK, "for (int i = 0; i < 5; ___) {", new String[]{"i++", "i += 1", "i = i + 1"}, 40, 15));
         }
@@ -79,6 +81,14 @@ public class BattleSystem {
         if (phase == BattlePhase.PLAYER_CHOOSE_ACTION)
         {
             handleInput();
+
+
+
+            if(gp.battleSystem.isTutorialBattle && gp.battleSystem.tutorialTurnNumber == 0 && phase == BattlePhase.PLAYER_CHOOSE_ACTION && !introMessageShown)
+                gp.battleSystem.battleLog = "Oh no! You've encountered an enemy! What will you do?";
+            introMessageShown = true;
+
+
         } else if (phase == BattlePhase.ENEMY_TURN)
         {
             if(enemyTimer == 0)
@@ -97,12 +107,12 @@ public class BattleSystem {
                 battleLog = "";
                 if (phase != BattlePhase.BATTLE_WON && phase != BattlePhase.BATTLE_LOST) {
                     phase = BattlePhase.PLAYER_CHOOSE_ACTION;
+                    while(partyMembers.get(activePartyIndex).hp <= 0)
+                    {
+                        activePartyIndex = (activePartyIndex + 1) % partyMembers.size();
+                    }
                 }
                 activePartyIndex = (activePartyIndex + 1) % partyMembers.size();
-                while(partyMembers.get(activePartyIndex).hp <= 0)
-                {
-                    activePartyIndex = (activePartyIndex + 1) % partyMembers.size();
-                }
             }
 
         } else if (phase == BattlePhase.PLAYER_TYPING)
@@ -112,17 +122,12 @@ public class BattleSystem {
                 gp.keyH.enterPressed = false;
                 submitAnswer();
             }
-            if (gp.keyH.lastTypedChar != 0) {
-                if (gp.keyH.lastTypedChar == '\b' && typedText.length() > 0) {
-                    typedText = typedText.substring(0, typedText.length() - 1);
-                } else if (gp.keyH.lastTypedChar != '\b' && gp.keyH.lastTypedChar >= 32) {
-                    typedText += gp.keyH.lastTypedChar;
-                }
-                gp.keyH.lastTypedChar = 0;
-            }
+
+            gp.handler.updateTypedText();
+
             if (gp.keyH.escapePressed) {
                 gp.keyH.escapePressed = false;
-                typedText = "";
+                gp.handler.clearText();
                 phase = BattlePhase.PLAYER_CHOOSE_ACTION;
             }
         }
@@ -146,11 +151,18 @@ public class BattleSystem {
         } else if (phase == BattlePhase.PLAYER_CHOOSE_ITEM)
         {
             handleItemInput();
+            if(phase == BattlePhase.PLAYER_CHOOSE_ITEM && !inventory.isEmpty()) {
+                if (inventory.get(selectedItem) != null) battleLog = inventory.get(selectedItem).getDescription();
+            }
+
         } else if (phase == BattlePhase.BATTLE_WON || phase == BattlePhase.BATTLE_LOST)
         {
             if(gp.keyH.spacePressed)
             {
+                gp.doNotStartBattle = false;
+
                 gp.gameState = gp.playState;
+                gp.keyH.spacePressed = false;
                 if(gp.player.stoutDefeated && gp.mapIndex == 2) {
                     gp.gameState = gp.dialogueState;
                     gp.dialogueSpeakers = new String[]{
@@ -175,6 +187,24 @@ public class BattleSystem {
                             "Yeah, it's past the forest. Follow me and I'll show you."
                     };
                 }
+                else {
+                    if(gp.siriusMet && gp.mapIndex == 2)
+                    {
+                        gp.gameState = gp.dialogueState;
+                        gp.dialogueIndex = 0;
+
+                        gp.dialogueSpeakers = new String[]{
+                                "Purple Wizard",
+                                "Purple Wizard",
+                        };
+
+                        gp.dialogueLines = new String[]{
+                                "Oi, what are you doing?",
+                                "Pay attention and get back in there!",
+                        };
+                        siriusRescued = true;
+                    }
+                }
             }
             for(PartyMember member : partyMembers)
             {
@@ -185,9 +215,22 @@ public class BattleSystem {
 
     public void submitAnswer()
     {
-        String input = typedText;
-        int damage = ChallengeEvaluator.evaluate(currentChallenge, input, System.currentTimeMillis() - challengeStartTime, partyMembers.get(activePartyIndex).attack);
-        typedText = "";
+        String input = gp.handler.getText();
+//        int damage = ChallengeEvaluator.evaluate(currentChallenge, input, System.currentTimeMillis() - challengeStartTime, partyMembers.get(activePartyIndex).attack);
+
+        long timeElapsed = System.currentTimeMillis() - challengeStartTime;
+        int damage;
+
+        if(ChallengeEvaluator.evaluate(currentChallenge, input))
+        {
+            double timeRatio = 1.0 - ((double) timeElapsed / (currentChallenge.timeLimit * 1000));
+            double multiplier = 0.5 + (0.5 * Math.max(0, timeRatio));
+            damage = (int)(currentChallenge.baseDamage * multiplier) + partyMembers.get(activePartyIndex).attack;
+
+        } else {
+            damage = 0;
+        }
+        gp.handler.clearText();
         if (damage > 0)
         {
             gp.battleUI.animator.playOnce(BattleAnimator.EnemyAnim.DAMAGED);
@@ -479,6 +522,7 @@ public class BattleSystem {
 
         if (gp.keyH.escapePressed) {
             gp.keyH.escapePressed = false;
+            battleLog = "";
             phase = BattlePhase.PLAYER_CHOOSE_ACTION;
         }
 
@@ -515,7 +559,8 @@ public class BattleSystem {
         {
             gp.keyH.enterPressed = false;
             activePartyIndex = turnIndexBeforeTargeting; //reset because its just for the highlight
-            useItem(pendingItem, partyMembers.get(selectedTargetIndex));
+                useItem(pendingItem, partyMembers.get(selectedTargetIndex));
+
             phase = BattlePhase.SHOW_RESULT;
             selectedTargetIndex = 0;
         }
@@ -533,8 +578,18 @@ public class BattleSystem {
         switch(item.effectType)
         {
             case HEAL:
-                target.hp += item.power;
-                battleLog = target.name + " healed for " + item.power + "!";
+                if(target.maxHp < target.hp + item.power)
+                {
+                    int hpDiff = target.maxHp - target.hp;
+
+                    target.hp = target.maxHp;
+                    battleLog = target.name + " healed for " + hpDiff + "!";
+                } else {
+                    target.hp += item.power;
+                    battleLog = target.name + " healed for " + item.power + "!";
+
+                }
+
                 break;
         }
     }
@@ -614,6 +669,8 @@ public class BattleSystem {
             gp.player.firstBattleLost = true;
             gp.player.hp = gp.player.maxHp;
             battleLog = "";
+            gp.obj[38] = new SuperObject("stoutstill", 1.8*gp.tileSize, 13.3 * gp.tileSize, true);
+
         }
     }
 

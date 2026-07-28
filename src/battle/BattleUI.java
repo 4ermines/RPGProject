@@ -9,6 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 public class BattleUI {
+
     GamePanel gp;
     Font monogram;
     public BattleAnimator animator = new BattleAnimator();
@@ -23,7 +24,10 @@ public class BattleUI {
             monogram = Font.createFont(Font.TRUETYPE_FONT,
                             getClass().getResourceAsStream("/fonts/monogram.ttf"))
                     .deriveFont(24f);
-        } catch (FontFormatException | IOException e) {
+
+            background = ImageIO.read(getClass().getResourceAsStream("/battle/backgrounds/battleBG1.png"));
+
+        } catch (Exception e) {
             e.printStackTrace();
             monogram = new Font("Arial", Font.PLAIN, 24);
         }
@@ -65,35 +69,43 @@ public class BattleUI {
 
         if(gp.battleSystem.isSiriusTip)
         {
-            Color transparentBlack = new Color(0, 0, 0, 50);
-            g2.setColor(transparentBlack);
-            g2.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
+                if (gp.battleSystem.battleDialogueIndex < gp.battleSystem.battleDialogueLines.length) {
+                    gp.battleSystem.battleCurrentDialogue = gp.battleSystem.battleDialogueLines[gp.battleSystem.battleDialogueIndex];
+
+                }
+//                else {
+//                    gp.gameState = gp.battleState;
+//                    gp.battleSystem.battleCurrentDialogue = "";
+//                }
+
+
+                Color transparentBlack = new Color(0, 0, 0, 50);
+                g2.setColor(transparentBlack);
+                g2.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
 
 //            g2.drawImage(siriusBattleTip1, 0, 0, null);
-            g2.drawImage(gp.siriusBattleTips[gp.battleSystem.battleDialogueIndex], 0, 0, null);
+                g2.drawImage(gp.siriusBattleTips[gp.battleSystem.battleDialogueIndex], 0, 0, null);
 
-            g2.setColor(Color.BLACK);
-            Font largeMonogram = monogram.deriveFont(36.0f);
-            g2.setFont(largeMonogram);
+                g2.setColor(Color.BLACK);
+                Font largeMonogram = monogram.deriveFont(36.0f);
+                g2.setFont(largeMonogram);
 
-            FontMetrics fm = g2.getFontMetrics();
-            String[] battleDialogueList = gp.battleSystem.battleCurrentDialogue.split(" ");
-            int textX = (int) (2.8*gp.tileSize);
-            int textY = (int) (5.5*gp.tileSize);
+                FontMetrics fm = g2.getFontMetrics();
+                String[] battleDialogueList = gp.battleSystem.battleCurrentDialogue.split(" ");
+                int textX = (int) (2.8 * gp.tileSize);
+                int textY = (int) (5.5 * gp.tileSize);
 
-            String temp = "";
-            for(String word : battleDialogueList)
-            {
-                if(fm.stringWidth(temp + word) < 6.8 * gp.tileSize - 40)
-                {
-                    temp += word + " ";
-                } else {
-                    g2.drawString(temp, textX, textY);
-                    temp = word + " ";
-                    textY += fm.getHeight();
+                String temp = "";
+                for (String word : battleDialogueList) {
+                    if (fm.stringWidth(temp + word) < 6.8 * gp.tileSize - 40) {
+                        temp += word + " ";
+                    } else {
+                        g2.drawString(temp, textX, textY);
+                        temp = word + " ";
+                        textY += fm.getHeight();
+                    }
                 }
-            }
-            g2.drawString(temp, textX, textY);
+                g2.drawString(temp, textX, textY);
 
 
         }
@@ -110,17 +122,14 @@ public class BattleUI {
 
     private void drawBackground(Graphics2D g2)
     {
+
         g2.setColor(Color.black);
         g2.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
 
-        try {
-            background = ImageIO.read(getClass().getResourceAsStream("/battle/backgrounds/battleBG1.png"));
-
-        }catch(IOException e) {
-            e.printStackTrace();
-        }
-        if(background != null)
+        if(background != null) {
             g2.drawImage(background, 0, 0, null);
+        }
+
     }
 
     private void drawBossHPBar(Graphics2D g2)
@@ -140,10 +149,10 @@ public class BattleUI {
         g2.setFont(monogram);
 
         g2.setColor(normalColor);
-        g2.fillRect(10, 10, (int) (gp.tileSize * 2.5), (int) (gp.tileSize * 2.6));
+        g2.fillRect(10, 10, (int) (gp.tileSize * 2.5), (int) (gp.tileSize * 2.7));
         g2.setColor(Color.WHITE);
         g2.drawString("BATTLE CONTROLS", 18, 30);
-        g2.drawString("WASD - Select", 18, 80);
+        g2.drawString("WASD - Navigate", 18, 80);
         g2.drawString("SPACE - Select", 18, 110);
         g2.drawString("ESC - Back", 18, 140);
         g2.drawString("ENTER - Submit", 18, 170);
@@ -311,7 +320,7 @@ public class BattleUI {
         g2.drawString(challengeType, gp.tileSize + 10, (int)(8.5 * gp.tileSize) + 30);
         g2.drawString(gp.battleSystem.currentChallenge.prompt, gp.tileSize + 10, (int)(8.5 * gp.tileSize) + fm.getHeight()*2 + 20);
 
-        g2.drawString(gp.battleSystem.typedText + "|", gp.tileSize , (int)(8.5 * gp.tileSize) + fm.getHeight()*3 + 30);
+        g2.drawString(gp.handler.getText() + "|", gp.tileSize + 10, (int)(8.5 * gp.tileSize) + fm.getHeight()*3 + 30);
     }
 
     public void drawSkillsMenu(Graphics2D g2)
@@ -328,51 +337,56 @@ public class BattleUI {
         g2.drawString("SKILLS MENU", (int) (8.1*gp.tileSize), (int) (8.8*gp.tileSize));
         PartyMember activeMember = gp.battleSystem.partyMembers.get(gp.battleSystem.activePartyIndex);
 
-        //drawing the boxes
-        if (gp.battleSystem.selectedSkill == 0) {
-            g2.setColor(highlightColor);
+        if(activeMember.skills.isEmpty())
+        {
+            g2.setColor(Color.white);
+            g2.drawString("No skills available.",(int)(10 * gp.tileSize),(int)(9.75 * gp.tileSize));
         } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+            //drawing the boxes
+            if (gp.battleSystem.selectedSkill == 0) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
 
 
-        if (gp.battleSystem.selectedSkill == 1) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+            if (gp.battleSystem.selectedSkill == 1) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
 
 
-        if (gp.battleSystem.selectedSkill == 2) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+            if (gp.battleSystem.selectedSkill == 2) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
 
 
-        if (gp.battleSystem.selectedSkill == 3) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+            if (gp.battleSystem.selectedSkill == 3) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
 
 
-        //drawing text
-        g2.setColor(Color.WHITE);
-        int i = 0;
-            for(Skill skill : activeMember.skills) {
+            //drawing text
+            g2.setColor(Color.WHITE);
+            int i = 0;
+            for (Skill skill : activeMember.skills) {
                 int col = i % 2; // 0 = left, 1 = right
                 int row = i / 2; // 0 = top, 1 = bottom
-                int x = (col == 0) ? (int)(8.2 * gp.tileSize) : (int)(12 * gp.tileSize);
-                int y = (int)(9.5 * gp.tileSize) + row * gp.tileSize;
+                int x = (col == 0) ? (int) (8.2 * gp.tileSize) : (int) (12 * gp.tileSize);
+                int y = (int) (9.5 * gp.tileSize) + row * gp.tileSize;
                 g2.drawString(skill.name, x, y);
                 i++;
             }
-
+        }
     }
 
     public void drawItemsMenu(Graphics2D g2)
@@ -389,51 +403,57 @@ public class BattleUI {
         g2.drawString("ITEMS MENU", (int) (8.1*gp.tileSize), (int) (8.8*gp.tileSize));
         PartyMember activeMember = gp.battleSystem.partyMembers.get(gp.battleSystem.activePartyIndex);
 
-        //drawing the boxes
-        if (gp.battleSystem.selectedItem == 0) {
-            g2.setColor(highlightColor);
+        if(gp.battleSystem.inventory.isEmpty())
+        {
+            g2.setColor(Color.white);
+            g2.drawString("No items available.",(int)(10 * gp.tileSize),(int)(9.75 * gp.tileSize));
         } else {
-            g2.setColor(normalColor);
+
+            //drawing the boxes
+            if (gp.battleSystem.selectedItem == 0) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+
+
+            if (gp.battleSystem.selectedItem == 1) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+
+
+            if (gp.battleSystem.selectedItem == 2) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+
+
+            if (gp.battleSystem.selectedItem == 3) {
+                g2.setColor(highlightColor);
+            } else {
+                g2.setColor(normalColor);
+            }
+            g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
+
+
+            //drawing text
+            g2.setColor(Color.WHITE);
+            int i = 0;
+            for (Item item : gp.battleSystem.inventory) {
+                int col = i % 2; // 0 = left, 1 = right
+                int row = i / 2; // 0 = top, 1 = bottom
+                int x = (col == 0) ? (int) (8.2 * gp.tileSize) : (int) (12 * gp.tileSize);
+                int y = (int) (9.5 * gp.tileSize) + row * gp.tileSize;
+                g2.drawString(item.name, x, y);
+                i++;
+            }
         }
-        g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
-
-
-        if (gp.battleSystem.selectedItem == 1) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (9.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
-
-
-        if (gp.battleSystem.selectedItem == 2) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (8.1 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
-
-
-        if (gp.battleSystem.selectedItem == 3) {
-            g2.setColor(highlightColor);
-        } else {
-            g2.setColor(normalColor);
-        }
-        g2.fillRoundRect(((int) (11.9 * gp.tileSize)), (int) (10.2 * gp.tileSize), 3 * gp.tileSize, gp.tileSize / 2, 2, 2);
-
-
-        //drawing text
-        g2.setColor(Color.WHITE);
-        int i = 0;
-        for(Item item : gp.battleSystem.inventory) {
-            int col = i % 2; // 0 = left, 1 = right
-            int row = i / 2; // 0 = top, 1 = bottom
-            int x = (col == 0) ? (int)(8.2 * gp.tileSize) : (int)(12 * gp.tileSize);
-            int y = (int)(9.5 * gp.tileSize) + row * gp.tileSize;
-            g2.drawString(item.name, x, y);
-            i++;
-        }
-
     }
 
     public void drawResultsScreen(Graphics2D g2)

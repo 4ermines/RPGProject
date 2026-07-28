@@ -137,8 +137,8 @@ public class NPC extends Entity {
 
     public void draw(Graphics2D g2)
     {
-        double screenX = worldX - gp.player.worldX + gp.player.screenX;
-        double screenY = worldY - gp.player.worldY + gp.player.screenY;
+        double screenX = worldX - gp.camWorldX + gp.player.screenX;
+        double screenY = worldY - gp.camWorldY + gp.player.screenY;
 
         BufferedImage image = null;
 

@@ -1,5 +1,6 @@
 package entity;
 
+import battle.BattleSystem;
 import main.GamePanel;
 import main.KeyHandler;
 import object.SuperObject;
@@ -42,6 +43,8 @@ public class Player extends Entity {
     public boolean stoutDefeated = false;
     public boolean exitTrain = false;
 
+    //for save
+    public boolean doorOpened = false;
 
     public Player (GamePanel gp, KeyHandler keyH) {
         this.gp = gp;
@@ -269,13 +272,15 @@ public class Player extends Entity {
 
                             if (stoutCounter >= stoutMax) {
                                 stoutAnimationDone = true;
+                                gp.obj[38] = new SuperObject("stoutstill", 1.8*gp.tileSize + xDiff, 13.3 * gp.tileSize +yDiff, true);
 
                                 gp.obj[i].animationOffsetX = 0;
                                 gp.obj[i].animationOffsetY = 0;
 
                                 // start battle
                                 gp.battleSystem.isTutorialBattle = true;
-                                gp.battleSystem.startBattle(gp.stout);
+                                gp.startBattleTransition(gp.stout);
+
                                 break;
                             }
                         }
@@ -299,6 +304,7 @@ public class Player extends Entity {
                     if (distance < 2 * gp.tileSize) {
                         if (keyH.interactPressed) {
                             gp.obj[1] = new SuperObject("dooropen", 12 * gp.tileSize, 4 * gp.tileSize, false);
+                            doorOpened = true;
                             keyH.interactPressed = false;
                             break;
                         }
@@ -312,8 +318,8 @@ public class Player extends Entity {
                             holdingLetter = true;
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[] {
-                                    "Congratulations! After careful evaluation, we are excited to offer \nyou a place at [] Academy!",
-                                    "By attending our school, you'll be surrounded by a community of scholars \nand have the chance to sharpen your magic skills."
+                                    "Congratulations! After careful evaluation, we are excited to offer you a place at [] Academy!",
+                                    "By attending our school, you'll be surrounded by a community of scholars and have the chance to sharpen your magic skills."
                             };
                             gp.dialogueIndex = 0;
                             currentAnimation = AnimationType.BOUNCE;
@@ -361,7 +367,7 @@ public class Player extends Entity {
                                     gp.obj[11] = null;
                                     gp.gameState = gp.dialogueState;
                                     gp.dialogueLines = new String[]{
-                                            "You can't imagine leaving without your personal items. A phone \nand a notebook is a must!",
+                                            "You can't imagine leaving without your personal items. A phone and a notebook is a must!",
                                     };
                                     gp.dialogueIndex = 0;
                                     break;
@@ -384,6 +390,19 @@ public class Player extends Entity {
 //        keyH.interactPressed = false;
     }
 
+    public void checkNPCProximity()
+    {
+        NPC[] npcs = {gp.firedMan, gp.pinkGirl, gp.spidermanKid};
+
+        for(NPC npc : npcs) {
+            if (npc == null) continue;
+
+            double xDistance = Math.abs(worldX - npc.worldX);
+            double yDistance = Math.abs(worldY - npc.worldY);
+            double distance = Math.max(xDistance, yDistance);
+        }
+    }
+
     public void checkNPCInteraction()
     {
         NPC[] npcs = {gp.firedMan, gp.pinkGirl, gp.spidermanKid};
@@ -403,7 +422,7 @@ public class Player extends Entity {
                             "This is the worst day of my life...",
                             "Twenty years with those scumbags, all gone to sh*t just like that.",
                             "Excuse me, sir, are you alright? What happened?",
-                            "*Sniff* I was the best man on their team. The BEST! Thrown out on the road \nlike trash!",
+                            "*Sniff* I was the best man on their team. The BEST! Thrown out on the road like trash!",
                             "It's over for me. IT'S OVERRRR!!! WAAAAAAAAAHHHHH!!!!!!!!!!!!!!!!!!",
                             "Maybe it's best to leave him alone..."
                     };
@@ -426,16 +445,23 @@ public class Player extends Entity {
                         gp.dialogueLines = new String[]{
                                 "You see a fashionable girl with pink hair.",
                                 "Hey, I love your outfit. It's very... pink.",
-                                "Thanks! If I'm gonna work all day, I might as well look good while \ndoing it...",
-                                "Wow, I actually love your pajamas! It reminds me of my nana.",
-                                "You suddenly feel self conscious. Maybe you should have changed into \nsomething better when you left."
+                                "Thanks! Gotta look good for my first day at the office!",
+                                "Wow, good luck! What do you work with?",
+                                "Oh, I'm a software engineer.",
+                                "That's awesome! I just got into a new school and I'll need to pick up some programming skills as well.",
+                                "Then let me give you a tip...",
+                                "Whatever you do, don't forget to add the SEMICOLON at the end of each code statement!"
                         };
                         gp.dialogueSpeakers = new String[]{
                                 "",
                                 "Player",
                                 "Pink Girl",
                                 "Pink Girl",
-                                ""
+                                "Player",
+                                "Pink Girl",
+                                "Player",
+                                "Pink Girl",
+                                "Pink Girl"
                         };
                         gp.dialogueIndex = 0;
                         gp.pinkGirlTalkDone = true;
@@ -450,9 +476,12 @@ public class Player extends Entity {
                                 "What are you doing here alone?",
                                 "The city needs me!",
                                 "Kid, where are your parents?",
-                                "They were taken by Green Goblin!",
+                                "They were taken by the Green Goblin!",
                                 "Are you... here alone?",
                                 "Please don't tell my mom...",
+                                "...",
+                                "Look, I made this potion infused with my spider DNA that'll protect you from bad guys.",
+                                "I'll give it to you if you promise not to tell?",
                                 "This kid is totally lost in fantasy."
                         };
                         gp.dialogueSpeakers = new String[]{
@@ -462,6 +491,9 @@ public class Player extends Entity {
                                 "Player",
                                 "Kid",
                                 "Player",
+                                "Kid",
+                                "Kid",
+                                "Kid",
                                 "Kid",
                                 ""
                         };
@@ -474,7 +506,7 @@ public class Player extends Entity {
         keyH.interactPressed = false;
         if(!exitTrain)
         {
-            if(gp.firedManTalkDone && gp.pinkGirlTalkDone && gp.spidermanKidTalkDone && gp.gameState != gp.dialogueState)
+            if(gp.firedManTalkDone && gp.pinkGirlTalkDone && gp.spidermanKidTalkDone && gp.spiderKidPotionGiven && gp.gameState != gp.dialogueState && gp.gameState != gp.itemPopupState)
             {
                 gp.completeFade(
                         new String[]{"You leave the train."},
@@ -544,6 +576,9 @@ public class Player extends Entity {
 
          //    g2.setColor(Color.white);
         //    g2.fillRect(x, y, gp.tileSize, gp.tileSize);
+        int screenX = worldX - gp.camWorldX + gp.player.screenX;
+        int screenY = worldY - gp.camWorldY + gp.player.screenY;
+
 
         BufferedImage image = null;
         if (holdingLetter && gp.gameState == gp.dialogueState) {
@@ -567,6 +602,15 @@ public class Player extends Entity {
                     if (spriteNum == 3) {
                         image = up3;
                     }
+
+                    if(!gp.keyH.upPressed && !gp.keyH.downPressed && !gp.keyH.rightPressed && !gp.keyH.leftPressed)
+                    {
+                        image = up2;
+                    } else if(gp.gameState == gp.dialogueState)
+                    {
+                        image = up2;
+                    }
+
                     break;
                 case "down":
                     if (spriteNum == 1) {
@@ -578,6 +622,16 @@ public class Player extends Entity {
                     if (spriteNum == 3) {
                         image = down3;
                     }
+
+                    if(!gp.keyH.upPressed && !gp.keyH.downPressed && !gp.keyH.rightPressed && !gp.keyH.leftPressed)
+                    {
+                        image = down2;
+                    } else if(gp.gameState == gp.dialogueState)
+                    {
+                        image = down2;
+                    }
+
+
                     break;
                 case "left":
                     if (spriteNum == 1) {
@@ -589,6 +643,16 @@ public class Player extends Entity {
                     if (spriteNum == 3) {
                         image = left3;
                     }
+
+                    if(!gp.keyH.upPressed && !gp.keyH.downPressed && !gp.keyH.rightPressed && !gp.keyH.leftPressed)
+                    {
+                        image = left2;
+                    } else if(gp.gameState == gp.dialogueState)
+                    {
+                        image = left2;
+                    }
+
+
                     break;
                 case "right":
                     if (spriteNum == 1) {
@@ -600,6 +664,15 @@ public class Player extends Entity {
                     if (spriteNum == 3) {
                         image = right3;
                     }
+
+                    if(!gp.keyH.upPressed && !gp.keyH.downPressed && !gp.keyH.rightPressed && !gp.keyH.leftPressed)
+                    {
+                        image = right2;
+                    } else if(gp.gameState == gp.dialogueState)
+                    {
+                        image = right2;
+                    }
+
             }
 
         }

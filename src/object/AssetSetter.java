@@ -264,7 +264,7 @@ public class AssetSetter {
 
                 gp.pinkGirl = new NPC(gp, NPC.NPCType.PINKGIRL, 4 * gp.tileSize, (int) (0.5 * gp.tileSize));
 
-                gp.spidermanKid = new NPC(gp, NPC.NPCType.SPIDERMANKID, 8 * gp.tileSize, (int) (2 * gp.tileSize));
+                gp.spidermanKid = new NPC(gp, NPC.NPCType.SPIDERMANKID, (int) (7.8 * gp.tileSize), (int) (1.8 * gp.tileSize));
                 gp.spidermanKid.currentAnimation = NPC.NPCAnimationType.EXCITE;
 
                 gp.obj[70] = new SuperObject("trainSeats", 3 * gp.tileSize, 0.5 * gp.tileSize, true);

@@ -3,6 +3,8 @@ package main;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+import static java.lang.Thread.sleep;
+
 public class KeyHandler implements KeyListener {
 
     public boolean upPressed, downPressed, rightPressed, leftPressed;
@@ -12,6 +14,7 @@ public class KeyHandler implements KeyListener {
     public boolean testBattlePressed;
     public boolean enterPressed;
     public boolean escapePressed;
+    public boolean spaceIsActive = true;
 
     public char lastTypedChar = 0;
 
@@ -40,8 +43,9 @@ public class KeyHandler implements KeyListener {
             rightPressed = true;
         }
 
-        if (code == KeyEvent.VK_SPACE) {
+        if ((code == KeyEvent.VK_SPACE) && (spaceIsActive)) {
             spacePressed = true;
+            spaceIsActive = false;
         }
 
         if (code == KeyEvent.VK_F) {
@@ -68,6 +72,9 @@ public class KeyHandler implements KeyListener {
         }
 
 
+    }
+    public void activeSpace() {
+            spaceIsActive = true;
     }
 
     @Override

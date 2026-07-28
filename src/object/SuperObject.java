@@ -68,16 +68,16 @@ public class SuperObject {
     }
 
     public void draw(Graphics2D g2, GamePanel gp) {
-        double screenX = worldX - gp.player.worldX + gp.player.screenX;
-        double screenY = worldY - gp.player.worldY + gp.player.screenY;
+        double screenX = worldX - gp.camWorldX + gp.player.screenX;
+        double screenY = worldY - gp.camWorldY + gp.player.screenY;
         double imageWidth = displayWidth;
         double imageHeight = displayHeight;
 
         // Only draw if the object is visible on the screen
-        if (worldX + imageWidth > gp.player.worldX - gp.player.screenX &&
-                worldX < gp.player.worldX + gp.player.screenX + gp.tileSize &&
-                worldY + imageHeight > gp.player.worldY - gp.player.screenY &&
-                worldY < gp.player.worldY + gp.player.screenY + gp.tileSize) {
+        if (worldX + imageWidth > gp.camWorldX - gp.player.screenX &&
+                worldX < gp.camWorldX + gp.player.screenX + gp.tileSize &&
+                worldY + imageHeight > gp.camWorldY - gp.player.screenY &&
+                worldY < gp.camWorldY + gp.player.screenY + gp.tileSize) {
 
             // FIX: Added the animation offsets directly inside your existing conditional draw statement
             g2.drawImage(image,

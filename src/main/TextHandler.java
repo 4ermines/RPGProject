@@ -39,17 +39,36 @@ public class TextHandler {
         g2.fillRoundRect(x, y, width, height, 35, 35);
 
 
+
+
         g2.setColor(Color.WHITE);
         g2.setStroke(new BasicStroke(3));
         g2.drawRoundRect(x, y, width, height, 35, 35);
+
         g2.setColor(Color.WHITE);
         g2.setFont(new Font("Arial", Font.PLAIN, 24));
-        String fullText = gp.currentDialogue;
-        String[] lines = fullText.split("\n");
-        for (int i = 0; i < lines.length; i++) {
-            g2.drawString(lines[i], x + 30, y + 40+(i * lineHeight));
+
+        FontMetrics fm = g2.getFontMetrics();
+        int maxTextWidth = width - 60;
+
+        String[] words = gp.currentDialogue.split(" ");
+        String currentLine = "";
+        int lineIndex = 0;
+
+        for (String word : words) {
+            String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
+            if(fm.stringWidth(testLine) < maxTextWidth)
+            {
+                currentLine = testLine;
+            } else {
+                g2.drawString(currentLine, x + 30, y + 40 + (lineIndex * lineHeight));
+                lineIndex++;
+                currentLine = word;
+            }
+
         }
 
+        g2.drawString(currentLine, x + 30, y + 40 + (lineIndex * lineHeight));
 
         g2.setColor(Color.white);
 

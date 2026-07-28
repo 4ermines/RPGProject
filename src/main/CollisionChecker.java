@@ -145,7 +145,7 @@ public class CollisionChecker {
             );
             Rectangle npcArea = new Rectangle(
                     npc.worldX + npc.solidArea.x,
-                    npc.worldY + npc.solidArea.y,
+                    npc.worldY + npc.solidArea.y + 20,
                     npc.solidArea.width, npc.solidArea.height
             );
 

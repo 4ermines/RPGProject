@@ -4,12 +4,17 @@ import battle.BattleSystem;
 import battle.BattleUI;
 import battle.Item;
 import entity.*;
+import exam.ExamSystem;
+import exam.ExamUI;
 import object.AssetSetter;
 import object.SuperObject;
+import training.TrainingSystem;
+import training.TrainingUI;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -45,6 +50,13 @@ public class GamePanel extends JPanel implements Runnable {
     public final int siriusWalkState = 12;
     public final int battleDialogueState = 13;
     public final int siriusFollowState = 14;
+    public final int battleTransitionState = 15;
+    public final int examState = 16;
+    public final int trainingState = 17;
+    public final int panState = 18;
+    public final int titleState = 19;
+    public final int saveSelectState = 20;
+    public final int itemPopupState = 21;
 
     // FADE DIALOGUE STUFF
     public String[] fadeDialogueLines;
@@ -74,6 +86,7 @@ public class GamePanel extends JPanel implements Runnable {
             "/maps/trainmap.txt",
             "/maps/train2map.txt",
             "/maps/interiortrainmap.txt",
+            "/maps/castleentrance.txt"
     };
     public int mapIndex = 0;
 
@@ -89,6 +102,30 @@ public class GamePanel extends JPanel implements Runnable {
     public BattleUI battleUI = new BattleUI(this);
     public PartyMember siriusMagiosis = new SiriusMagiosis("Sirius Magiosis", 150, 30);
     public Enemy stout = new Stout();
+    public ItemPopup itemPopup = new ItemPopup(this);
+    public ExamSystem examSystem = new ExamSystem(this);
+    public ExamUI examUI = new ExamUI(this);
+    public TypedInputHandler handler = new TypedInputHandler(this);
+    public TrainingSystem trainingSystem = new TrainingSystem(this);
+    public TrainingUI trainingUI = new TrainingUI(this);
+    public MouseHandler mouseH = new MouseHandler();
+    public TitleScreen titleScreen = new TitleScreen(this, mouseH);
+
+    //CAM
+    public int camWorldX, camWorldY;
+    public int castlePanTargetY, castlePanTargetX;
+
+    //PAN
+    public final int panHoldDuration = 60;
+    public Runnable afterPanAction;
+    public int panTimer = 0;
+    public PanPhase panPhase;
+    public enum PanPhase {
+        PANNING_UP,
+        HOLDING,
+        PANNING_DOWN
+    }
+
 
     //SIRIUS EXTRAS
     public NPC sirius;
@@ -114,9 +151,40 @@ public class GamePanel extends JPanel implements Runnable {
     public int trainAnimationMax = 30;
     public int trainAnimationIndex = 0;
 
+    double scrollX;
+    BufferedImage trainScrollImage;
+
+    {
+        try {
+            trainScrollImage = ImageIO.read(getClass().getResourceAsStream("/tiles/trainWindowBg.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean firedManTalkDone = false;
     public boolean pinkGirlTalkDone = false;
     public boolean spidermanKidTalkDone = false;
+    public boolean spiderKidPotionGiven = false;
+
+    public boolean castleFadeTriggered = false;
+    public boolean doNotStartBattle;
+
+    //BATTLE TRANSITIONS
+    public enum TransitionPhase {
+        CLOSING,
+        HOLDING,
+        OPENING
+    }
+    public TransitionPhase transitionPhase;
+    public int transitionTimer = 0;
+    public final int transitionCloseDuration = 18;
+    public final int transitionHoldDuration = 8;
+    public final int transitionOpenDuration = 22;
+    public double transitionMaxRadius;
+    public Enemy pendingBattleEnemy;
+    public boolean transitionSceneSwitched = false;
+    public int transitionTargetState;
 
     {
         try {
@@ -137,24 +205,32 @@ public class GamePanel extends JPanel implements Runnable {
         this.setBackground(black);
         this.setDoubleBuffered(true);
         this.addKeyListener(keyH);
+        this.addMouseListener(mouseH);
+        this.addMouseMotionListener(mouseH);
         this.setFocusable(true);
-        startFadeFromBlack(
-                new String[]{"You wake up. The sun shines brightly in your face."},
-                () -> {
-                    dialogueLines = new String[]{
-                            "Something tells you it's going to be a good day. Press space to continue.",
-                            "Use WASD to move."
-                    };
-                    dialogueIndex = 0;
-                    gameState = dialogueState;
-                }
-        );
+
+        gameState = titleState;
+
+        //OLD GAME INTRO, NEEDS TO BE REPLACED WITH TITLE SCREEN AND ONLY PLAY AFTER SELECTING A NEW GAME
+//        startFadeFromBlack(
+//                new String[]{"You wake up. The sun shines brightly in your face."},
+//                () -> {
+//                    dialogueLines = new String[]{
+//                            "Something tells you it's going to be a good day. Press space to continue.",
+//                            "Use WASD to move."
+//                    };
+//                    dialogueIndex = 0;
+//                    gameState = dialogueState;
+//                }
+//        );
+
+
+
         battleSystem.partyMembers.add(new PartyMember("Player", player.hp, 20, player.icon)); //maybe move later
 //        battleSystem.partyMembers.add(siriusMagiosis); //maybe move later
-//        battleSystem.partyMembers.add(new PartyMember("Fatty", 100, 10, player.icon));
-//        battleSystem.partyMembers.add(new PartyMember("Fatty2", 100, 10, player.icon));
 
         battleSystem.inventory.add(new Item("Potion", Item.EffectType.HEAL, 5, "Heals a party member 5 HP"));
+//
 
 
 
@@ -186,6 +262,8 @@ public class GamePanel extends JPanel implements Runnable {
 
         double drawInterval = (double) 1000000000 / FPS;
         double delta = 0;
+        double spaceDelta = 0;
+        double spaceDelay = 75;
         long lastTime = System.nanoTime();
         long currentTime;
         //long timer = 0;
@@ -205,6 +283,11 @@ public class GamePanel extends JPanel implements Runnable {
                 update();
                 repaint();
                 delta--;
+                spaceDelta++;
+                if (spaceDelta >= spaceDelay) {
+                    keyH.activeSpace();
+                    spaceDelta = 0;
+                }
             //    drawCount++;
             }
 
@@ -249,6 +332,101 @@ public class GamePanel extends JPanel implements Runnable {
         this.gameState = fadeOutState;
     }
 
+    public void startPan(int targetX, int targetY, Runnable afterPanAction) {
+        gameState = panState;
+        panTimer = 0;
+        panPhase = PanPhase.PANNING_UP;
+        castlePanTargetX = targetX;
+        castlePanTargetY = targetY;
+        this.afterPanAction = afterPanAction;
+    }
+
+    private void moveCamTowards(int targetX, int targetY, int speed) {
+        if (Math.abs(camWorldX - targetX) > speed) {
+            camWorldX += (camWorldX < targetX) ? speed : -speed;
+        } else if (Math.abs(camWorldY - targetY) > speed) {
+            camWorldY += (camWorldY < targetY) ? speed : -speed;
+        } else {
+            camWorldX = targetX;
+            camWorldY = targetY;
+        }
+    }
+
+    public void updatePan() {
+        int panSpeed = 3;
+
+        switch (panPhase) {
+            case PANNING_UP:
+                moveCamTowards(castlePanTargetX, castlePanTargetY, panSpeed);
+                if(camWorldY == castlePanTargetY && camWorldX == castlePanTargetX)
+                {
+                    panPhase = PanPhase.HOLDING;
+                }
+                break;
+            case HOLDING:
+                panTimer++;
+                if(panTimer >= panHoldDuration)
+                {
+                    panPhase = PanPhase.PANNING_DOWN;
+                }
+                break;
+            case PANNING_DOWN:
+                moveCamTowards(player.worldX, player.worldY, panSpeed);
+                if(camWorldY == player.worldY && camWorldX == player.worldX)
+                {
+                    afterPanAction.run();
+                }
+                break;
+        }
+    }
+
+    public void startBattleTransition(Enemy enemy) {
+        startBattleTransition(enemy, battleState);
+    }
+
+    public void startBattleTransition(Enemy enemy, int targetGameStateAfter) {
+        pendingBattleEnemy = enemy;
+        transitionTargetState = targetGameStateAfter;
+        transitionPhase = TransitionPhase.CLOSING;
+        transitionTimer = 0;
+        transitionSceneSwitched = false;
+        transitionMaxRadius = Math.sqrt(Math.pow(screenWidth / 2.0, 2) + Math.pow(screenHeight / 2.0, 2));
+        gameState = battleTransitionState;
+    }
+
+    private void updateBattleTransition(){
+        transitionTimer++;
+        switch (transitionPhase){
+            case CLOSING:
+                if(transitionTimer >= transitionCloseDuration)
+                {
+                    if(!transitionSceneSwitched)
+                    {
+                        battleSystem.startBattle(pendingBattleEnemy);
+                        gameState = battleTransitionState;
+                        transitionSceneSwitched = true;
+                    }
+                    transitionPhase = TransitionPhase.HOLDING;
+                    transitionTimer = 0;
+                }
+                break;
+            case HOLDING:
+                if(transitionTimer >= transitionHoldDuration)
+                {
+                    transitionPhase = TransitionPhase.OPENING;
+                    transitionTimer = 0;
+                }
+                break;
+            case OPENING:
+                if(transitionTimer >= transitionOpenDuration)
+                {
+                    gameState = transitionTargetState;
+                }
+                break;
+
+        }
+    }
+
     // Changes the map when train station is entered
     public void enterTrain() {
         gameState = trainState;
@@ -266,7 +444,7 @@ public class GamePanel extends JPanel implements Runnable {
         aSetter.setObject();
         tileM.loadMap(mapFiles[3]);
         player.worldX = 2 * tileSize;
-        player.worldY = (int) (2 * tileSize);
+        player.worldY = (int) (1.8 * tileSize);
     }
 
 
@@ -277,6 +455,39 @@ public class GamePanel extends JPanel implements Runnable {
         tileM.loadMap(mapFiles[2]);
         player.worldX = 30 * tileSize;
         player.worldY = 18 * tileSize;
+    }
+
+    public void checkCastleMapEntrance()
+    {
+        double xDistance = Math.abs(player.worldX - sirius.worldX);
+        double yDistance = Math.abs(player.worldY - sirius.worldY);
+        double distance = Math.max(xDistance, yDistance);
+
+        if(distance < 2 * tileSize)
+        {
+            if(sirius.worldY == siriusTargetY && !castleFadeTriggered)
+            {
+                completeFade(null,
+                        () -> {
+                            mapIndex = 4;
+                            aSetter.setObject();
+                            tileM.loadMap(mapFiles[4]);
+                            player.worldX = 3 * tileSize;
+                            player.worldY = (int) (2.5 * tileSize);
+                            sirius.worldX = 3 * tileSize;
+                            sirius.worldY = (int) (3.5 * tileSize);
+                            castleFadeTriggered = true;
+                        },
+                        () -> {
+                            gameState = siriusFollowState;
+                            siriusTargetY = (int) (0.5 * tileSize);
+                        }
+
+                );
+            }
+        }
+
+
     }
 
     public void animateTrainDoors()
@@ -290,7 +501,115 @@ public class GamePanel extends JPanel implements Runnable {
 
     }
 
+    private double easeInOutQuad(double t)
+    {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        //takes progress value t from 0.0 to 1.0, returning an eased progress value from 0 to 1, but remapped so the motion feels natural instead of robotic
+        //if you were to animate using t, the progress value alone, it would animate at a constant speed
+        //basically what a graph does in an editing software
+    }
 
+    private void drawBattleTransitionOverlay(Graphics2D g2)
+    {
+        double radius;
+        switch (transitionPhase)
+        {
+            case CLOSING:
+                double tc = easeInOutQuad((double) transitionTimer / transitionCloseDuration);
+                radius = transitionMaxRadius * (1 - tc);
+                break;
+            case OPENING:
+                double to = easeInOutQuad((double) transitionTimer / transitionOpenDuration);
+                radius = transitionMaxRadius * to;
+                break;
+            default:
+                radius = 0;
+        }
+
+        int cx = screenWidth / 2;
+        int cy = screenHeight / 2;
+
+        //white flash at pinch point for impact
+        if (transitionPhase == TransitionPhase.HOLDING && transitionTimer < 3)
+        {
+            g2.setColor(Color.white);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+            return;
+        }
+
+        java.awt.geom.Area mask = new java.awt.geom.Area(new Rectangle(0, 0, screenWidth,screenHeight));
+        if (radius > 0)
+        {
+            java.awt.geom.Ellipse2D hole = new java.awt.geom.Ellipse2D.Double(cx - radius, cy - radius, radius * 2, radius * 2);
+            mask.subtract(new java.awt.geom.Area(hole));
+        }
+        g2.setColor(Color.black);
+        g2.fill(mask);
+
+        //ring around iris edge
+        if (radius > 0 && radius < transitionMaxRadius)
+        {
+            g2.setColor(new Color(255, 255, 255, 180));
+            g2.setStroke(new BasicStroke(4f));
+            g2.draw(new java.awt.geom.Ellipse2D.Double(cx - radius, cy - radius, radius * 2, radius * 2));
+        }
+    }
+
+    public void loadGame(SaveData data) {
+        mapIndex = data.mapIndex;
+        aSetter.setObject();
+        for(int index : data.removedObjectIndices) {
+            obj[index] = null;
+        }
+        if(data.doorOpened && mapIndex == 0) {
+            obj[1] = new SuperObject("dooropen", 12 * tileSize, 4 * tileSize, false);
+        }
+        tileM.loadMap(mapFiles[mapIndex]);
+
+        player.worldX = data.worldX;
+        player.worldY = data.worldY;
+
+        siriusMet = data.siriusMet;
+        siriusWalkDone = data.siriusWalkDone;
+        firedManTalkDone = data.firedManTalkDone;
+        pinkGirlTalkDone = data.pinkGirlTalkDone;
+        spidermanKidTalkDone = data.spidermanKidTalkDone;
+        spiderKidPotionGiven = data.spiderKidPotionGiven;
+        castleFadeTriggered = data.castleFadeTriggered;
+        player.stoutDefeated = data.stoutDefeated;
+
+        player.holdingLetter = data.holdingLetter;
+        player.packDone = data.packDone;
+        player.firstBattleLost = data.firstBattleLost;
+        player.exitTrain = data.exitTrain;
+
+        player.hp = data.playerHp;
+        player.maxHp = data.playerMaxHp;
+
+        battleSystem.partyMembers.clear();
+
+        for(int i = 0; i < data.partyNames.size(); i++)
+        {
+            String partyName = data.partyNames.get(i);
+            int lastHp = data.partyHp.get(i);
+//            int maxHp = data.partyMaxHp.get(i);
+
+            switch(partyName) {
+                case "Player":
+                    PartyMember savedPlayerMember = new PartyMember("Player", player.maxHp, 20, player.icon);
+                    battleSystem.partyMembers.add(savedPlayerMember);
+                    savedPlayerMember.hp = lastHp;
+                    break;
+                case "Sirius Magiosis":
+                    battleSystem.partyMembers.add(siriusMagiosis);
+                    siriusMagiosis.hp = lastHp;
+                    break;
+            }
+        }
+
+        gameState = playState;
+
+    }
 
     public void update() {
 
@@ -301,6 +620,18 @@ public class GamePanel extends JPanel implements Runnable {
         if(pinkGirl != null) pinkGirl.update();
 
         if(spidermanKid != null) spidermanKid.update();
+
+        if (itemPopup != null) itemPopup.update();
+
+        if(spidermanKidTalkDone && !spiderKidPotionGiven && gameState == playState)
+        {
+            try {
+                itemPopup.trigger("Potion", ImageIO.read(getClass().getResourceAsStream("/ui/potionItem.png")));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            spiderKidPotionGiven = true;
+        }
 
         if(triggerTrainAnimation && !firstTrainFadeTriggered)
         {
@@ -363,11 +694,17 @@ public class GamePanel extends JPanel implements Runnable {
                     startAnimationAfterDialogue = false;
                 } else if (dialogueFinished) {
                     gameState = packState;
-                } else {
+                } else if (battleSystem.siriusRescued) {
+                    battleSystem.siriusRescued = false;
+                    doNotStartBattle = true;
+                    keyH.spacePressed = false;
+                    startBattleTransition(new Stout());
+                }
+                else {
                     gameState = playState;
                 }
 
-                if(siriusWalkDone)
+                if(siriusWalkDone && !doNotStartBattle)
                 {
                     if(siriusWalkDialogueFinished && !siriusMet)
                     {
@@ -383,7 +720,7 @@ public class GamePanel extends JPanel implements Runnable {
                         if(siriusMet)
                         {
                             gameState = battleState;
-                            battleSystem.startBattle(new Stout());
+//                            battleSystem.startBattle(new Stout());
                             battleSystem.isSiriusTip = true;
                             battleSystem.battleDialogueLines = new String[]{
                                     "Don't fret! With a powerful wizard like me on your hands, you'll easily achieve victory!",
@@ -402,7 +739,8 @@ public class GamePanel extends JPanel implements Runnable {
                                     siriusBattleTip2
                             };
                             battleSystem.battleDialogueIndex = 0;
-                            gameState = battleDialogueState;
+//                            gameState = battleDialogueState;
+                            startBattleTransition(new Stout(), battleDialogueState);
                             battleSystem.isFirstTurnTutorial = true;
                         }
 
@@ -433,7 +771,9 @@ public class GamePanel extends JPanel implements Runnable {
             player.update();
             player.checkObjectProximity();
             player.checkObjectInteraction();
+            player.checkNPCProximity();
             player.checkNPCInteraction();
+
         } else if (gameState == packState) {
             player.update();
             player.checkObjectProximity();
@@ -444,6 +784,7 @@ public class GamePanel extends JPanel implements Runnable {
             player.update();
             player.checkObjectProximity();
             player.checkObjectInteraction();
+            player.checkNPCProximity();
             player.checkNPCInteraction();
         } else if(gameState == battleState) {
             battleSystem.update();
@@ -477,6 +818,7 @@ public class GamePanel extends JPanel implements Runnable {
         } else if(gameState == siriusFollowState)
         {
             player.update();
+            checkCastleMapEntrance();
 
             double xDistance = Math.abs(player.worldX - sirius.worldX);
             double yDistance = Math.abs(player.worldY - sirius.worldY);
@@ -523,13 +865,42 @@ public class GamePanel extends JPanel implements Runnable {
                 siriusBattleTipIndex = 0;
             }
 
+        } else if (gameState == battleTransitionState)
+        {
+            updateBattleTransition();
+        }
+
+        else if (gameState == examState)
+        {
+            examSystem.update();
+        }
+
+        else if (gameState == trainingState)
+        {
+            trainingSystem.update();
+        }
+
+        else if (gameState == panState)
+        {
+            int panSpeed = 3;
+
+            gameState = panState;
+            updatePan();
+
         }
 
         // TESTING
         if (keyH.testPressed && gameState == playState) {
             keyH.testPressed = false;
-            enterTrain();
+//            trainingSystem.startTraining();
+//            startPan(player.worldX, 0,
+//                    () -> {
+//                        gameState = playState;
+//                    }
+//            );
+            SaveLoadManager.save(this, 0);
         }
+
 //        if(keyH.testBattlePressed)
 //        {
 //            keyH.testBattlePressed = false;
@@ -538,13 +909,47 @@ public class GamePanel extends JPanel implements Runnable {
 //            System.out.println(testBoss.hp);
 //        }
 
+        //scroll image in train
+        if (mapIndex == 3)
+        {
+            scrollX++;
+        }
+
+        if(gameState != panState) {
+            camWorldX = player.worldX;
+            camWorldY = player.worldY;
+        }
+
+
     }
 
     public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
         Graphics2D g2 = (Graphics2D)g;
 
+        super.paintComponent(g);
+
+
+        //scroll bg train interior
+        if (mapIndex == 3) {
+            double imageWidth = trainScrollImage.getWidth();
+            double offset = scrollX % imageWidth;
+
+            int windowScreenY = 0 - player.worldY + player.screenY + (int) (0.35 * tileSize);
+
+            // room's actual left/right edges in screen space
+            int roomLeft = tileSize - player.worldX + player.screenX;
+            int roomRight = maxWorldCol * tileSize - player.worldX + player.screenX - tileSize;
+
+            Shape oldClip = g2.getClip();
+            g2.setClip(roomLeft, windowScreenY, roomRight - roomLeft, tileSize); // adjust height as needed
+
+            int startX = (int) (-offset - imageWidth);
+            for (int x = startX; x < screenWidth + imageWidth; x += imageWidth) {
+                g2.drawImage(trainScrollImage, x, windowScreenY, null);
+            }
+
+            g2.setClip(oldClip);
+        }
         //TILE
         tileM.draw(g2);
 
@@ -589,6 +994,7 @@ public class GamePanel extends JPanel implements Runnable {
 //
 //        }
 
+
         if (gameState == fadeBlackHoldState || gameState == fadeInState || gameState == fadeOutState) {
             g2.setColor(new Color(0, 0, 0, fadeAlpha));
             g2.fillRect(0, 0, screenWidth, screenHeight);
@@ -601,6 +1007,7 @@ public class GamePanel extends JPanel implements Runnable {
                 int y = screenHeight / 2;
                 g2.drawString(text, x, y);
             }
+
         }
         //dialogue
          if (gameState == dialogueState) {
@@ -613,22 +1020,48 @@ public class GamePanel extends JPanel implements Runnable {
              }
          }
 
-        if (gameState == battleDialogueState) {
-            if (battleSystem.battleDialogueIndex < battleSystem.battleDialogueLines.length) {
-                battleSystem.battleCurrentDialogue = battleSystem.battleDialogueLines[battleSystem.battleDialogueIndex];
+//        if (gameState == battleDialogueState) {
+//            if (battleSystem.battleDialogueIndex < battleSystem.battleDialogueLines.length) {
+//                battleSystem.battleCurrentDialogue = battleSystem.battleDialogueLines[battleSystem.battleDialogueIndex];
+//
+//            } else {
+//                gameState = battleState;
+//                battleSystem.battleCurrentDialogue = "";
+//            }
+//        }
 
-            } else {
-                gameState = battleState;
-                battleSystem.battleCurrentDialogue = "";
-            }
+        if(gameState == battleTransitionState)
+        {
+            if(transitionSceneSwitched)
+                battleUI.draw(g2);
+            drawBattleTransitionOverlay(g2);
         }
-
-
-        if(gameState == battleState || gameState == battleDialogueState)
+        else if(gameState == battleState || gameState == battleDialogueState)
          {
              battleUI.draw(g2);
-
          }
+
+        if(gameState == examState)
+        {
+            examUI.draw(g2);
+        }
+
+        if(gameState == trainingState)
+        {
+            trainingUI.draw(g2);
+        }
+
+        if (itemPopup != null) itemPopup.draw(g2);
+
+        if (gameState == titleState)
+        {
+            titleScreen.drawTitleScreen(g2);
+        }
+
+        if (gameState == saveSelectState)
+        {
+            titleScreen.drawSaveSelectScreen(g2);
+        }
 
 
 

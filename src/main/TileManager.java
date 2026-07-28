@@ -230,11 +230,11 @@ public class TileManager {
 
             int worldX = worldCol * gp.tileSize; //camera
             int worldY = worldRow * gp.tileSize;
-            int screenX = worldX - gp.player.worldX + gp.player.screenX;
-            int screenY = worldY - gp.player.worldY + gp.player.screenY;
+            int screenX = worldX - gp.camWorldX + gp.player.screenX;
+            int screenY = worldY - gp.camWorldY + gp.player.screenY;
 
-            if (worldX + gp.tileSize > gp.player.worldX - gp.player.screenX && worldX - gp.tileSize < gp.player.worldX + gp.player.screenX
-                    && worldY + gp.tileSize > gp.player.worldY - gp.player.screenY && worldY - gp.tileSize < gp.player.worldY + gp.player.screenY) {
+            if (worldX + gp.tileSize > gp.camWorldX - gp.player.screenX && worldX - gp.tileSize < gp.camWorldX + gp.player.screenX
+                    && worldY + gp.tileSize > gp.camWorldY - gp.player.screenY && worldY - gp.tileSize < gp.camWorldY + gp.player.screenY) {
                 g2.drawImage(tile[tileNum].image, screenX, screenY, gp.tileSize, gp.tileSize, null);
             } //improve game performance
             worldCol++;

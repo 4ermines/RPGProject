@@ -21,4 +21,14 @@ public class Item {
         this.power = power;
         this.description = description;
     }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public int getPower()
+    {
+        return power;
+    }
 }
