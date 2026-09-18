@@ -180,6 +180,52 @@ public class TileManager {
             tile[44].image = ImageIO.read(getClass().getResourceAsStream("/tiles/trainInteriorWindow2.png"));
             tile[44].collision = true;
 
+            tile[45] = new Tile();
+            tile[45].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassBlandDarker1.png"));
+            tile[45].collision = false;
+
+            tile[46] = new Tile();
+            tile[46].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassBlandDarker2.png"));
+            tile[46].collision = false;
+
+            tile[47] = new Tile();
+            tile[47].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath1Light.png"));
+            tile[47].collision = false;
+
+            tile[48] = new Tile();
+            tile[48].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath1Med.png"));
+            tile[48].collision = false;
+
+            tile[49] = new Tile();
+            tile[49].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath1Dark.png"));
+            tile[49].collision = false;
+
+            tile[50] = new Tile();
+            tile[50].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath2Light.png"));
+            tile[50].collision = false;
+
+            //51
+
+            //52
+
+            tile[53] = new Tile();
+            tile[53].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath3Light.png"));
+            tile[53].collision = false;
+
+            //54
+
+            //55
+
+            tile[56] = new Tile();
+            tile[56].image = ImageIO.read(getClass().getResourceAsStream("/tiles/darkGrassPath4Light.png"));
+            tile[56].collision = false;
+
+            //57
+
+            //58
+
+
+
             //add more later
 
         }catch(IOException e) {
@@ -214,7 +260,13 @@ public class TileManager {
                     mapTileNum[col][row] = Integer.parseInt(numbers[col]);
                 }
             }
-            } catch (Exception e) {
+
+            // Update world width and height
+            gp.worldWidth = gp.tileSize * gp.maxWorldCol;
+            gp.worldHeight = gp.tileSize * gp.maxWorldRow;
+
+
+        } catch (Exception e) {
                 e.printStackTrace();
         }
     }
@@ -233,10 +285,33 @@ public class TileManager {
             int screenX = worldX - gp.camWorldX + gp.player.screenX;
             int screenY = worldY - gp.camWorldY + gp.player.screenY;
 
+            // Stop moving the camera at the edge
+//            if(gp.player.screenX > gp.player.worldX) {
+//                screenX = worldX;
+//            }
+//            if(gp.player.screenY > gp.player.worldY) {
+//                screenY = worldY;
+//            }
+//            int rightOffset = gp.screenWidth - gp.player.screenX;
+//            if(rightOffset > gp.worldWidth - gp.player.worldX) {
+//                screenX = gp.screenWidth - (gp.worldWidth - worldX);
+//            }
+//            int bottomOffset = gp.screenHeight - gp.player.screenY;
+//            if(bottomOffset > gp.worldHeight - gp.player.worldY) {
+//                screenY = gp.screenHeight - (gp.worldHeight - worldY);
+//            }
+
             if (worldX + gp.tileSize > gp.camWorldX - gp.player.screenX && worldX - gp.tileSize < gp.camWorldX + gp.player.screenX
                     && worldY + gp.tileSize > gp.camWorldY - gp.player.screenY && worldY - gp.tileSize < gp.camWorldY + gp.player.screenY) {
                 g2.drawImage(tile[tileNum].image, screenX, screenY, gp.tileSize, gp.tileSize, null);
-            } //improve game performance
+            }//improve game performance
+//            else if(gp.player.screenX > gp.player.worldX ||
+//                    gp.player.screenY > gp.player.worldY ||
+//                    rightOffset > gp.worldWidth - gp.player.worldX ||
+//                    bottomOffset > gp.worldHeight - gp.player.worldY) {
+//                g2.drawImage(tile[tileNum].image, screenX, screenY, gp.tileSize, gp.tileSize, null);
+//            }
+
             worldCol++;
             if(worldCol == gp.maxWorldCol) {
                 worldCol = 0;

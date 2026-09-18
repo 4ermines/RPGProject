@@ -15,8 +15,18 @@ public class KeyHandler implements KeyListener {
     public boolean enterPressed;
     public boolean escapePressed;
     public boolean spaceIsActive = true;
+    public boolean cursorUpActive = true;
+    public boolean cursorDownActive = true;
+    public boolean cursorLeftActive = true;
+    public boolean cursorRightActive = true;
+
+    GamePanel gp;
 
     public char lastTypedChar = 0;
+
+    public KeyHandler(GamePanel gp) {
+        this.gp = gp;
+    }
 
     @Override
     public void keyTyped(KeyEvent e) {
@@ -29,18 +39,35 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_W) { //if W is pressed
             upPressed = true;
+            if (cursorUpActive && gp.gameState == gp.inventoryState && gp.inventory.slotRow != 0) {
+                gp.inventory.slotRow--;
+                cursorUpActive = false;
+            }
         }
 
         if (code == KeyEvent.VK_A) { //if A is pressed
             leftPressed = true;
+            if (cursorLeftActive && gp.gameState == gp.inventoryState && gp.inventory.slotCol != 0) {
+                gp.inventory.slotCol--;
+                cursorLeftActive = false;
+            }
         }
 
         if (code == KeyEvent.VK_S) { //if S is pressed
             downPressed = true;
+            if (cursorDownActive && gp.gameState == gp.inventoryState && gp.inventory.slotRow != 5) {
+                gp.inventory.slotRow++;
+                cursorDownActive = false;
+            }
         }
 
         if (code == KeyEvent.VK_D) { //if D is pressed
             rightPressed = true;
+            if (cursorRightActive && gp.gameState == gp.inventoryState && gp.inventory.slotCol != 4) {
+                gp.inventory.slotCol++;
+                cursorRightActive = false;
+            }
+
         }
 
         if ((code == KeyEvent.VK_SPACE) && (spaceIsActive)) {
@@ -83,18 +110,22 @@ public class KeyHandler implements KeyListener {
 
         if (code == KeyEvent.VK_W) { //if W is pressed
             upPressed = false;
+            cursorUpActive = true;
         }
 
         if (code == KeyEvent.VK_A) { //if A is pressed
             leftPressed = false;
+            cursorLeftActive = true;
         }
 
         if (code == KeyEvent.VK_S) { //if S is pressed
             downPressed = false;
+            cursorDownActive = true;
         }
 
         if (code == KeyEvent.VK_D) { //if D is pressed
             rightPressed = false;
+            cursorRightActive = true;
         }
 
         if (code == KeyEvent.VK_SPACE) {
@@ -124,8 +155,6 @@ public class KeyHandler implements KeyListener {
             escapePressed = false;
         }
 
-
     }
-
 
 }

@@ -34,6 +34,14 @@ public class SaveData implements Serializable {
     public boolean firstBattleLost;
     public boolean exitTrain;
 
+    public boolean hasW;
+    public boolean hasA;
+    public boolean hasS;
+    public boolean hasD;
+    public boolean hasWASD;
+    public boolean hasOpenedMenu;
+    public boolean walkDialogueShown;
+
 
     // Battle system state
     public List<String> inventoryNames = new ArrayList<>();
@@ -65,6 +73,17 @@ public class SaveData implements Serializable {
         packDone = gp.player.packDone;
         firstBattleLost = gp.player.firstBattleLost;
         exitTrain = gp.player.exitTrain;
+
+        hasW = gp.hasW;
+        hasA = gp.hasA;
+        hasS = gp.hasS;
+        hasD = gp.hasD;
+        hasWASD = gp.hasWASD;
+        hasOpenedMenu = gp.hasOpenedMenu;
+        walkDialogueShown = gp.walkDialogueShown;
+
+
+
 
         for (Item item : gp.battleSystem.inventory) {
             inventoryNames.add(item.name); // adjust to your actual Item fields

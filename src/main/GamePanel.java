@@ -35,6 +35,8 @@ public class GamePanel extends JPanel implements Runnable {
     // WORLD SETTINGS
     public int maxWorldCol;
     public int maxWorldRow;
+    public int worldWidth;
+    public int worldHeight;
 
     // ALL THE STATES
     public int gameState;
@@ -57,6 +59,8 @@ public class GamePanel extends JPanel implements Runnable {
     public final int titleState = 19;
     public final int saveSelectState = 20;
     public final int itemPopupState = 21;
+    public final int inventoryState = 22;
+    public final int menuState = 23;
 
     // FADE DIALOGUE STUFF
     public String[] fadeDialogueLines;
@@ -92,12 +96,12 @@ public class GamePanel extends JPanel implements Runnable {
 
     // INSTANCES
     TileManager tileM = new TileManager(this);
-    public KeyHandler keyH = new KeyHandler();
+    public KeyHandler keyH = new KeyHandler(this);
     Thread gameThread;
     public CollisionChecker cChecker = new CollisionChecker(this);
     public AssetSetter aSetter = new AssetSetter(this);
     public Player player = new Player(this, keyH);
-    public SuperObject[] obj = new SuperObject[100];
+    public SuperObject[] obj = new SuperObject[200];
     public BattleSystem battleSystem = new BattleSystem(this);
     public BattleUI battleUI = new BattleUI(this);
     public PartyMember siriusMagiosis = new SiriusMagiosis("Sirius Magiosis", 150, 30);
@@ -110,6 +114,8 @@ public class GamePanel extends JPanel implements Runnable {
     public TrainingUI trainingUI = new TrainingUI(this);
     public MouseHandler mouseH = new MouseHandler();
     public TitleScreen titleScreen = new TitleScreen(this, mouseH);
+    public Inventory inventory = new Inventory(this);
+    public Menu menu = new Menu(this);
 
     //CAM
     public int camWorldX, camWorldY;
@@ -151,6 +157,15 @@ public class GamePanel extends JPanel implements Runnable {
     public int trainAnimationMax = 30;
     public int trainAnimationIndex = 0;
 
+    //OPENING -- WIP
+    public boolean hasOpenedMenu = false;
+    public boolean hasW = false;
+    public boolean hasA = false;
+    public boolean hasS = false;
+    public boolean hasD = false;
+    public boolean hasWASD = false;
+    public boolean walkDialogueShown = false;
+
     double scrollX;
     BufferedImage trainScrollImage;
 
@@ -186,7 +201,16 @@ public class GamePanel extends JPanel implements Runnable {
     public boolean transitionSceneSwitched = false;
     public int transitionTargetState;
 
+    // INV ICONS
+    BufferedImage potionIcon;
+
     {
+        try {
+            potionIcon = ImageIO.read(getClass().getResourceAsStream("/ui/potionItem.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         try {
             siriusBattleTip1 = ImageIO.read(getClass().getResourceAsStream("/ui/siriusBattleTip1.png"));
             siriusBattleTip2 = ImageIO.read(getClass().getResourceAsStream("/ui/siriusBattleTip2.png"));
@@ -229,7 +253,7 @@ public class GamePanel extends JPanel implements Runnable {
         battleSystem.partyMembers.add(new PartyMember("Player", player.hp, 20, player.icon)); //maybe move later
 //        battleSystem.partyMembers.add(siriusMagiosis); //maybe move later
 
-        battleSystem.inventory.add(new Item("Potion", Item.EffectType.HEAL, 5, "Heals a party member 5 HP"));
+        player.inventory.add(new Item("Potion", Item.EffectType.HEAL, 5, "Heals a party member 5 HP", potionIcon, true));
 //
 
 
@@ -453,7 +477,7 @@ public class GamePanel extends JPanel implements Runnable {
         mapIndex = 2;
         aSetter.setObject();
         tileM.loadMap(mapFiles[2]);
-        player.worldX = 30 * tileSize;
+        player.worldX = 29 * tileSize;
         player.worldY = 18 * tileSize;
     }
 
@@ -472,15 +496,16 @@ public class GamePanel extends JPanel implements Runnable {
                             mapIndex = 4;
                             aSetter.setObject();
                             tileM.loadMap(mapFiles[4]);
-                            player.worldX = 3 * tileSize;
-                            player.worldY = (int) (2.5 * tileSize);
-                            sirius.worldX = 3 * tileSize;
-                            sirius.worldY = (int) (3.5 * tileSize);
+                            player.worldX = (int) (8.5 * tileSize);
+                            player.worldY = (int) (20 * tileSize);
+                            sirius.worldX = (int) (8.5 * tileSize);
+                            sirius.worldY = (int) (18 * tileSize);
                             castleFadeTriggered = true;
                         },
                         () -> {
                             gameState = siriusFollowState;
-                            siriusTargetY = (int) (0.5 * tileSize);
+                            siriusTargetY = (int) (10 * tileSize);
+                            siriusTargetX = (int) (8.5 * tileSize);
                         }
 
                 );
@@ -586,6 +611,15 @@ public class GamePanel extends JPanel implements Runnable {
         player.hp = data.playerHp;
         player.maxHp = data.playerMaxHp;
 
+        hasW = data.hasW;
+        hasA = data.hasA;
+        hasS = data.hasS;
+        hasD = data.hasD;
+        hasWASD = data.hasWASD;
+        hasOpenedMenu = data.hasOpenedMenu;
+        walkDialogueShown = data.walkDialogueShown;
+
+
         battleSystem.partyMembers.clear();
 
         for(int i = 0; i < data.partyNames.size(); i++)
@@ -623,13 +657,13 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (itemPopup != null) itemPopup.update();
 
+        for(int i = 0; i < obj.length; i++) {
+            if (obj[i] != null) obj[i].update();
+        }
+
         if(spidermanKidTalkDone && !spiderKidPotionGiven && gameState == playState)
         {
-            try {
-                itemPopup.trigger("Potion", ImageIO.read(getClass().getResourceAsStream("/ui/potionItem.png")));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            itemPopup.trigger("Potion", potionIcon);
             spiderKidPotionGiven = true;
         }
 
@@ -749,7 +783,7 @@ public class GamePanel extends JPanel implements Runnable {
                         {
                             sirius.currentAnimation = NPC.NPCAnimationType.WALK_UPWARD;
                             siriusTargetX = sirius.worldX;
-                            siriusTargetY = 2 * tileSize;
+                            siriusTargetY = 4 * tileSize;
                             gameState = siriusFollowState;
                         }
                     }
@@ -773,6 +807,27 @@ public class GamePanel extends JPanel implements Runnable {
             player.checkObjectInteraction();
             player.checkNPCProximity();
             player.checkNPCInteraction();
+            if(!player.doorOpened && !hasWASD) {
+                if(keyH.upPressed)
+                    hasW = true;
+                if(keyH.leftPressed)
+                    hasA = true;
+                if(keyH.downPressed)
+                    hasS = true;
+                if(keyH.rightPressed)
+                    hasD = true;
+                if(hasW && hasA && hasS && hasD)
+                    hasWASD = true;
+            }
+            else if(!player.doorOpened && hasWASD && !walkDialogueShown) {
+                dialogueIndex = 0;
+                gameState = dialogueState;
+                dialogueLines = new String[]{
+                        "Congrats, you can walk! Press space to advance the dialogue.",
+                        "Press ESC to open the menu. You can save or quit at any time."
+                };
+                walkDialogueShown = true;
+            }
 
         } else if (gameState == packState) {
             player.update();
@@ -889,8 +944,22 @@ public class GamePanel extends JPanel implements Runnable {
 
         }
 
+        else if(gameState == inventoryState)
+        {
+            if(keyH.escapePressed)
+            {
+                keyH.escapePressed = false;
+                gameState = playState;
+            }
+
+        }
+
+        else if (gameState == menuState) {
+            menu.update();
+        }
+
         // TESTING
-        if (keyH.testPressed && gameState == playState) {
+        if (keyH.testPressed && (gameState == playState || gameState == siriusFollowState)) {
             keyH.testPressed = false;
 //            trainingSystem.startTraining();
 //            startPan(player.worldX, 0,
@@ -898,8 +967,19 @@ public class GamePanel extends JPanel implements Runnable {
 //                        gameState = playState;
 //                    }
 //            );
+//            enterTrain();
             SaveLoadManager.save(this, 0);
+//            gameState = inventoryState;
+//            gameState = menuState;
         }
+
+        if(keyH.escapePressed && gameState == playState)
+        {
+            gameState = menuState;
+            if(!hasOpenedMenu)
+                hasOpenedMenu = true;
+        }
+
 
 //        if(keyH.testBattlePressed)
 //        {
@@ -916,9 +996,19 @@ public class GamePanel extends JPanel implements Runnable {
         }
 
         if(gameState != panState) {
-            camWorldX = player.worldX;
-            camWorldY = player.worldY;
+            if (worldWidth <= screenWidth) {
+                camWorldX = worldWidth / 2;
+            } else {
+                camWorldX = Math.max(player.screenX, Math.min(player.worldX, worldWidth - player.screenX));
+            }
+
+            if (worldHeight <= screenHeight) {
+                camWorldY = worldHeight / 2;
+            } else {
+                camWorldY = Math.max(player.screenY, Math.min(player.worldY, worldHeight - player.screenY));
+            }
         }
+
 
 
     }
@@ -934,11 +1024,11 @@ public class GamePanel extends JPanel implements Runnable {
             double imageWidth = trainScrollImage.getWidth();
             double offset = scrollX % imageWidth;
 
-            int windowScreenY = 0 - player.worldY + player.screenY + (int) (0.35 * tileSize);
+            int windowScreenY = 0 - camWorldY + player.screenY + (int) (0.35 * tileSize);
 
             // room's actual left/right edges in screen space
-            int roomLeft = tileSize - player.worldX + player.screenX;
-            int roomRight = maxWorldCol * tileSize - player.worldX + player.screenX - tileSize;
+            int roomLeft = tileSize - camWorldX + player.screenX;
+            int roomRight = maxWorldCol * tileSize - camWorldX + player.screenX - tileSize;
 
             Shape oldClip = g2.getClip();
             g2.setClip(roomLeft, windowScreenY, roomRight - roomLeft, tileSize); // adjust height as needed
@@ -960,22 +1050,6 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        if (mapIndex == 2) {
-            int cx = player.screenX + tileSize / 2;
-            int cy = player.screenY + tileSize / 2;
-            float radius = screenWidth * 0.6f; // adjust size to taste
-
-            RadialGradientPaint vignette = new RadialGradientPaint(
-                    cx, cy, radius,
-                    new float[]{0.0f, 1.0f},
-                    new Color[]{new Color(0,0,0,0), new Color(0,0,0,200)}
-            );
-
-            g2.setPaint(vignette);
-            g2.fillRect(0, 0, screenWidth, screenHeight);
-
-        }
-
 
         //PLAYER
         player.draw(g2);
@@ -985,6 +1059,21 @@ public class GamePanel extends JPanel implements Runnable {
         if(firedMan != null) firedMan.draw(g2);
         if(pinkGirl != null) pinkGirl.draw(g2);
         if(spidermanKid != null) spidermanKid.draw(g2);
+
+        if (mapIndex == 2) {
+            int cx = player.worldX - camWorldX + player.screenX + tileSize / 2;
+            int cy = player.worldY - camWorldY + player.screenY + tileSize / 2;
+            float radius = screenWidth * 0.6f;
+
+            RadialGradientPaint vignette = new RadialGradientPaint(
+                    cx, cy, radius,
+                    new float[]{0.0f, 1.0f},
+                    new Color[]{new Color(0,0,0,0), new Color(0,0,0,200)}
+            );
+
+            g2.setPaint(vignette);
+            g2.fillRect(0, 0, screenWidth, screenHeight);
+        }
 
 
 //        if (gameState == introState) {
@@ -1061,6 +1150,16 @@ public class GamePanel extends JPanel implements Runnable {
         if (gameState == saveSelectState)
         {
             titleScreen.drawSaveSelectScreen(g2);
+        }
+
+        if (gameState == inventoryState)
+        {
+            inventory.drawInventory(g2);
+        }
+
+        if (gameState == menuState)
+        {
+            menu.drawMenu(g2);
         }
 
 

@@ -15,7 +15,7 @@ import javax.swing.*;
     window.pack();
 
 
-    window.setTitle("Magicode");
+    window.setTitle("Magicode");//change it pls
     window.setLocationRelativeTo(null);
     window.setVisible(true);
 

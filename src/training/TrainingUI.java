@@ -126,7 +126,7 @@ public class TrainingUI {
 
         FontMetrics fm = g2.getFontMetrics();
 
-        //stolen from battle ui and idk what im even doing for the x and y
+        //stolen from battle ui
         String quitQuestion = "Would you like to quit training now?";
         int quitX = outerX + (popupWidth - fm.stringWidth(quitQuestion)) / 2;
         int quitY = outerY + (popupHeight - fm.getHeight()) / 2 + fm.getAscent() - gp.tileSize;

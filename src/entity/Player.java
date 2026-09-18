@@ -1,6 +1,7 @@
 package entity;
 
 import battle.BattleSystem;
+import battle.Item;
 import main.GamePanel;
 import main.KeyHandler;
 import object.SuperObject;
@@ -9,6 +10,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Player extends Entity {
 
@@ -39,9 +41,17 @@ public class Player extends Entity {
     private int stoutAnimationOffsetY = 0;
     private int stoutCounter = 0;
     private int stoutMax = 30;
+    private boolean stoutAnimationStarted = false;
+    private int stoutXDiff, stoutYDiff;
+    private int stoutObjIndex = -1;
+    private double stoutOriginX, stoutOriginY;
     public boolean firstBattleLost = false;
     public boolean stoutDefeated = false;
     public boolean exitTrain = false;
+
+
+    public ArrayList<Item> inventory = new ArrayList<>();
+    public final int maxInventorySize = 42;
 
     //for save
     public boolean doorOpened = false;
@@ -59,6 +69,7 @@ public class Player extends Entity {
 
         setDefaultValues();
         getPlayerImage();
+        setItems();
     }
     public void setDefaultValues () {
         worldX = gp.tileSize * 4;
@@ -68,6 +79,11 @@ public class Player extends Entity {
         maxHp = 100;
         hp = maxHp;
     }
+
+    public void setItems() {
+//        inventory.add()
+    }
+
     public void getPlayerImage() {
         try {
             up1 = ImageIO.read(getClass().getResourceAsStream("/player/up facing step left.png"));
@@ -168,7 +184,7 @@ public class Player extends Entity {
         if(firstBattleLost && !gp.siriusWalkDone)
         {
             if(gp.player.firstBattleLost) {
-                gp.sirius = new NPC(gp, NPC.NPCType.SIRIUS, 3 * gp.tileSize, (int) (5.3 * gp.tileSize));
+                gp.sirius = new NPC(gp, NPC.NPCType.SIRIUS, 2 * gp.tileSize, (int) (5.3 * gp.tileSize));
                 gp.sirius.currentAnimation = NPC.NPCAnimationType.WALK_DOWNWARD;
                 gp.sirius.siriusWalkFrame = 1;
                 gp.siriusTargetX = gp.tileSize * 3;
@@ -188,7 +204,7 @@ public class Player extends Entity {
                 // INTRO
                 if (!gp.obj[i].dialogueShown) {
 
-                    if (distance < 2 * gp.tileSize) {
+                    if (distance < 2 * gp.tileSize && gp.hasOpenedMenu && gp.gameState != gp.menuState) {
                         if (gp.obj[i].name.equals("door1") && i == 1) {
                             gp.gameState = gp.dialogueState;
                             gp.dialogueLines = new String[]{
@@ -250,46 +266,37 @@ public class Player extends Entity {
                 }
 
 
-                if (distance < 2 * gp.tileSize && gp.obj[i] != null) {
-                    if (gp.obj[i].name.equals("stoutstill") && !firstBattleLost) {
-
-                        if (stoutAnimationDone) {
-                            stoutAnimationDone = false;
-                            stoutCounter = 0;
-                        }
-
-                        // Only progress the math if actively animating
-                        if (!stoutAnimationDone) {
-                            stoutCounter++;
-                            double t = (double) stoutCounter / stoutMax;
-
-                            // Calculate the directional jumps
-                            int xDiff = (int) (worldX - gp.obj[i].worldX);
-                            int yDiff = (int) (worldY - gp.obj[i].worldY) - gp.tileSize;
-
-                            gp.obj[i].animationOffsetX = (int) (xDiff * t);
-                            gp.obj[i].animationOffsetY = (int) (yDiff * t) + (int) (-4 * t * (1 - t) * 15);
-
-                            if (stoutCounter >= stoutMax) {
-                                stoutAnimationDone = true;
-                                gp.obj[38] = new SuperObject("stoutstill", 1.8*gp.tileSize + xDiff, 13.3 * gp.tileSize +yDiff, true);
-
-                                gp.obj[i].animationOffsetX = 0;
-                                gp.obj[i].animationOffsetY = 0;
-
-                                // start battle
-                                gp.battleSystem.isTutorialBattle = true;
-                                gp.startBattleTransition(gp.stout);
-
-                                break;
-                            }
-                        }
-                    }
-                }
-
+                if (distance < 3 * gp.tileSize) {
+                    if (gp.obj[i].name.equals("stoutstill") && !firstBattleLost && !stoutAnimationStarted && !stoutAnimationDone) {
+                        stoutAnimationStarted = true;
+                        stoutObjIndex = i;
+                        stoutOriginX = gp.obj[i].worldX;
+                        stoutOriginY = gp.obj[i].worldY;
+                        stoutXDiff = (int) (worldX - gp.obj[i].worldX);
+                        stoutYDiff = (int) (worldY - gp.obj[i].worldY) - gp.tileSize;
+                    }                }
             }
 
         }
+
+        if (stoutAnimationStarted && !stoutAnimationDone) {
+            stoutCounter++;
+            double t = (double) stoutCounter / stoutMax;
+
+            gp.obj[stoutObjIndex].animationOffsetX = (int) (stoutXDiff * t);
+            gp.obj[stoutObjIndex].animationOffsetY = (int) (stoutYDiff * t) + (int) (-4 * t * (1 - t) * 15);
+
+            if (stoutCounter >= stoutMax) {
+                stoutAnimationDone = true;
+                stoutAnimationStarted = false;
+                gp.obj[38] = new SuperObject("stoutstill", stoutOriginX + stoutXDiff, stoutOriginY + stoutYDiff, true);
+                gp.obj[stoutObjIndex].animationOffsetX = 0;
+                gp.obj[stoutObjIndex].animationOffsetY = 0;
+                gp.battleSystem.isTutorialBattle = true;
+                gp.startBattleTransition(gp.stout);
+            }
+        }
+
     }
     // else {
     //                    gp.nearObject = false;
@@ -301,7 +308,7 @@ public class Player extends Entity {
                 double yDistance = Math.abs(worldY - gp.obj[i].worldY);
                 double distance = Math.max(xDistance, yDistance);
                 if (gp.obj[i].name.equals("door1") && i == 1) {
-                    if (distance < 2 * gp.tileSize) {
+                    if (distance < 2 * gp.tileSize && gp.hasOpenedMenu) {
                         if (keyH.interactPressed) {
                             gp.obj[1] = new SuperObject("dooropen", 12 * gp.tileSize, 4 * gp.tileSize, false);
                             doorOpened = true;
@@ -349,7 +356,7 @@ public class Player extends Entity {
                             }
                         }
                         if (gp.obj[i].name.equals("laptop") && i == 10) {
-                            if (distance < gp.tileSize) {
+                            if (distance < 1.3 * gp.tileSize) {
                                 if (keyH.interactPressed) {
                                     gp.obj[10] = null;
                                     gp.gameState = gp.dialogueState;
@@ -420,7 +427,7 @@ public class Player extends Entity {
                     gp.dialogueLines = new String[]{
                             "A suited man cries, holding a cardboard box full of office supplies.",
                             "This is the worst day of my life...",
-                            "Twenty years with those scumbags, all gone to sh*t just like that.",
+                            "Twenty years with those scumbags, all gone to $%*! just like that.",
                             "Excuse me, sir, are you alright? What happened?",
                             "*Sniff* I was the best man on their team. The BEST! Thrown out on the road like trash!",
                             "It's over for me. IT'S OVERRRR!!! WAAAAAAAAAHHHHH!!!!!!!!!!!!!!!!!!",
@@ -456,12 +463,11 @@ public class Player extends Entity {
                                 "",
                                 "Player",
                                 "Pink Girl",
-                                "Pink Girl",
                                 "Player",
                                 "Pink Girl",
                                 "Player",
                                 "Pink Girl",
-                                "Pink Girl"
+                                "Pink Girl",
                         };
                         gp.dialogueIndex = 0;
                         gp.pinkGirlTalkDone = true;
@@ -676,7 +682,28 @@ public class Player extends Entity {
             }
 
         }
+
+//        int x = screenX;
+//        int y = screenY;
+//
+//        if(screenX > worldX) {
+//            x = worldX;
+//        }
+//        if(screenY > worldY) {
+//            y = worldY;
+//        }
+//        int rightOffset = gp.screenWidth - screenX;
+//        if(rightOffset > gp.worldWidth - worldX) {
+//            x = gp.screenWidth - (gp.worldWidth - worldX);
+//        }
+//        int bottomOffset = gp.screenHeight - screenY;
+//        if(bottomOffset > gp.worldHeight - worldY) {
+//            y = gp.screenHeight - (gp.worldHeight - worldY);
+//        }
+
+
         g2.drawImage(image, screenX, screenY + animationOffsetY, gp.tileSize, gp.tileSize, null);
+
 
 //        if(!stoutAnimationDone && 0 < stoutCounter && stoutCounter <= stoutMax)
 //        {

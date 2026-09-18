@@ -152,7 +152,7 @@ public class BattleSystem {
         {
             handleItemInput();
             if(phase == BattlePhase.PLAYER_CHOOSE_ITEM && !inventory.isEmpty()) {
-                if (inventory.get(selectedItem) != null) battleLog = inventory.get(selectedItem).getDescription();
+                if (inventory.get(selectedItem) != null) battleLog = inventory.get(selectedItem).description;
             }
 
         } else if (phase == BattlePhase.BATTLE_WON || phase == BattlePhase.BATTLE_LOST)
@@ -370,6 +370,7 @@ public class BattleSystem {
 
     }
 
+    //WASD move around skill menu
     private void handleSkillInput()
     {
         if(selectedSkill == 0 && partyMembers.get(activePartyIndex).skills.size() > 0)
@@ -442,6 +443,7 @@ public class BattleSystem {
         }
     }
 
+    //does the applying of the skill
     private void applySkill(Skill skill, PartyMember user)
     {
         switch(skill.effectType)
